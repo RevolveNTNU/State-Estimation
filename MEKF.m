@@ -376,6 +376,16 @@ legend('True', 'Est');
 xlabel('Time [s]');
 ylabel('Yaw bias [deg]')
 
+% POSITION MAP
+figure(6)
+figure(gcf)
+subplot(1, 1, 1)
+plot(xpos, ypos, 'Color', 'black', 'Linewidth', 1.5);
+%legend('bias', 'est bias');
+%legend('True', 'Est');
+xlabel('X position [m]');
+ylabel('Y position [m]');
+title('Position Plot');
 %%
 function S = skew(x)
 S = [   0 -x(3)  x(2) ;
