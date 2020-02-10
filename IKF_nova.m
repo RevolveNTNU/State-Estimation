@@ -1,6 +1,6 @@
-% clear all;
-% clc;
-% close all;
+clear all;
+clc;
+close all;
 % 
 % rosbag_moholt_autox_2;
 % rosbag_moholt_autox_good;
@@ -8,8 +8,8 @@
 deg2rad = pi/180;   
 rad2deg = 180/pi;
 
-simtime = 100;
-f_samp  = 200;          %imu frequency
+simtime = 60;
+f_samp  = 100;          %imu frequency
 h       = 1/f_samp;     %sampling time
 N       = simtime/h;    %number of iterations
 
@@ -30,6 +30,10 @@ ars_bias = 10*[-.030 0.02 -.02]';
 
 %init values
 x = [ones(1, 3) zeros(1, 9)]';
+x(1:3) = [10 10 0]'; % position
+x(4:6) = [5*sqrt(2) 5*sqrt(2) 0]';
+x(7:9) = [0 0 deg2rad*45]';
+
 xnoise = x;
 delta_x = [zeros(15, 1)];
 x_ins = [zeros(15, 1)];
@@ -54,6 +58,15 @@ bias_data = zeros(6, N);
 ins_data = zeros(15, N);
 angvel_est = zeros(3, N);
 
+pos = zeros(3,N);
+pos(1:3, 1) = [10 10 0]'
+
+
+
+for i = 2:N
+    pos(1:3, i) = pos(1:3, i-1) + [0.1 0.1 0]';
+end
+
 count = 10;
 for i = 2:N
     t = (i-1) * h;   
@@ -69,9 +82,9 @@ for i = 2:N
     bias_data(:,i) = [acc_bias; rad2deg*ars_bias];
     
     %euler angles
-    phi     = x(7);
-    theta   = x(8);
-    psi     = x(9);
+    phi     =  0 * deg2rad; % x(7);
+    theta   =  0 * deg2rad; % x(8);
+    psi     = 45 * deg2rad; % x(9);
     [J, R_nb, Tt] = eulerang(phi, theta, psi);
     
 
@@ -91,7 +104,9 @@ for i = 2:N
      C_ins = [I3 Z3 Z3 Z3 Z3
               Z3 Z3 Z3 I3 Z3];
 
-    %plant
+    %plant 
+    
+    % Mass-spring-damper
     A_model = [Z3       I3      Z3          Z3      %p
             -k/m*I3     -d/m*I3     Z3      Z3      %v
             Z3          Z3          Z3      Tt*I3   %attitude
@@ -105,6 +120,22 @@ for i = 2:N
     C_model  = [I3 Z3 Z3 Z3
                 Z3 Z3 I3 Z3];
             
+    % Standing still
+    
+    A_model = [ Z3  I3  Z3  Z3
+                Z3  Z3  Z3  Z3
+                Z3  Z3  Z3  I3
+                Z3  Z3  Z3  Z3] ;
+            
+    
+    B_model =   [Z3             Z3
+                R_nb*I3         Z3 
+                Z3              Z3
+                Z3              Tt*I3];
+
+    C_model  = [I3 Z3 Z3 Z3
+                Z3 Z3 I3 Z3];
+            
     % 10 Hz update
     count = count + 1;
     if count >= 10
@@ -112,10 +143,15 @@ for i = 2:N
         
         % Measurements
         xnoise = x + [std_pos * randn(1) * ones(1, 3) 0 0 0 std_att * randn(1) * ones(1, 3) 0 0 0]';
-        y = C_model * x + [std_pos * randn(1) * ones(1, 3) std_att * randn(1) * ones(1, 3)]';             
+        %y = C_model * x + [std_pos * randn(1) * ones(1, 3) std_att * randn(1) * ones(1, 3)]';             
         y_ins = C_ins*x_ins;
         
-        [px,py,pz] = llh2flat(SKID.vcu_GNSS_longitude(i),SKID.vcu_GNSS_latitude(i),SKID.vcu_GNSS_altitude(i),SKID.vcu_GNSS_longitude(2),SKID.vcu_GNSS_latitude(2),SKID.vcu_GNSS_altitude(2)); 
+        y(1:3,1) = pos(:,i);
+        y(4:6,1) = [0 , 0, 45]' * deg2rad;
+        
+        y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]'
+        
+%         [px,py,pz] = llh2flat(SKID.vcu_GNSS_longitude(i),SKID.vcu_GNSS_latitude(i),SKID.vcu_GNSS_altitude(i),SKID.vcu_GNSS_longitude(2),SKID.vcu_GNSS_latitude(2),SKID.vcu_GNSS_altitude(2)); 
         
 %         y(1) = 0.2 * -px;
 %         y(2) = 0.2 * -py;
@@ -135,8 +171,10 @@ for i = 2:N
     
     %plant
     % u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
-    u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
+    u = [ [0 0 0]' ; [0 0 0]' ]; 
+    % u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
     xdot = A_model * x + B_model * u;
+    
     
     a_b_nb  = xdot(4:6);
     acc_noise = std_acc*randn(3, 1);
@@ -145,8 +183,11 @@ for i = 2:N
        
     f_imu_b = a_b_nb + ScrewSym(x(10:12)) * x(7:9) + acc_bias + acc_noise;
     
+    % f_imu_b = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i)]';
+    % w_imu = [SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]';
+    
     % Strapdown INS equations
-    xdot_ins = A_ins * x_ins + B_ins * [f_imu_b; (w_b_nb + ars_bias + ars_noise)];
+    xdot_ins = A_ins * x_ins + B_ins * [f_imu_b;(w_b_nb + ars_bias + ars_noise)];
          
     % Euler integration (k+1)
     x = x + h * xdot;
@@ -200,7 +241,7 @@ zpos_ins        = p_ins(3, :);
 
 v_ins           = ins_data(4:6, :);
 xvel_ins        = v_ins(1, :);
-yvel_ins        = v_ins(2, :)   ;
+yvel_ins        = v_ins(2, :);
 zvel_ins        = v_ins(3, :);
 
 b_acc_ins       = ins_data(7:9, :);
@@ -366,8 +407,8 @@ function delta_x = IndirectKalman(delta_y, R_nb, Tt, init)
     Z3 = zeros(3,3);
     I3 = eye(3);
     
-    Tacc = 200;
-    Tars = 200;
+    Tacc = 100;
+    Tars = 100;
 
     persistent P_hat Q R
     if init

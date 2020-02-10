@@ -20,8 +20,7 @@ data.vcu_INS_roll = data.vcu_INS_roll(start_index:end_index);
 data.vcu_INS_roll_rate = data.vcu_INS_roll_rate(start_index:end_index);
 data.vcu_INS_pitch = data.vcu_INS_pitch(start_index:end_index);
 data.vcu_INS_pitch_rate = data.vcu_INS_pitch_rate(start_index:end_index);
-
-plot
+    
 
 end
 
