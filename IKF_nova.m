@@ -30,10 +30,6 @@ ars_bias = 10*[-.030 0.02 -.02]';
 
 %init values
 x = [ones(1, 3) zeros(1, 9)]';
-x(1:3) = [10 10 0]'; % position
-x(4:6) = [5*sqrt(2) 5*sqrt(2) 0]';
-x(7:9) = [0 0 deg2rad*45]';
-
 xnoise = x;
 delta_x = [zeros(15, 1)];
 x_ins = [zeros(15, 1)];
@@ -58,13 +54,33 @@ bias_data = zeros(6, N);
 ins_data = zeros(15, N);
 angvel_est = zeros(3, N);
 
-pos = zeros(3,N);
-pos(1:3, 1) = [10 10 0]'
 
+% Simulator
 
+% choose only one case
+case_1 = false;
+case_2 = true;
+case_3 = false;
 
-for i = 2:N
-    pos(1:3, i) = pos(1:3, i-1) + [0.1 0.1 0]';
+if (case_1)
+    x(1:3) = [100 100 0]'; % position
+    x(7:9) = [0 0 deg2rad*45]'; % attitude
+end
+
+if (case_2)
+    % Create position measurements
+    pos = zeros(3,N);
+    pos(1:3, 1) = [10 10 0]';
+
+    for i = 2:N
+        pos(1:3, i) = pos(1:3, i-1) + [0.1 0.1 0]';
+    end
+    
+    % Modify init values
+    x(1:3) = [10 10 0]'; % position
+    x(4:6) = [5*sqrt(2) 5*sqrt(2) 0]';
+    x(7:9) = deg2rad*[0 0 45]';
+
 end
 
 count = 10;
@@ -82,9 +98,10 @@ for i = 2:N
     bias_data(:,i) = [acc_bias; rad2deg*ars_bias];
     
     %euler angles
-    phi     =  0 * deg2rad; % x(7);
-    theta   =  0 * deg2rad; % x(8);
-    psi     = 45 * deg2rad; % x(9);
+    phi     = x(7);
+    theta   = x(8);
+    psi     = x(9);
+    
     [J, R_nb, Tt] = eulerang(phi, theta, psi);
     
 
@@ -105,23 +122,8 @@ for i = 2:N
               Z3 Z3 Z3 I3 Z3];
 
     %plant 
-    
-    % Mass-spring-damper
-    A_model = [Z3       I3      Z3          Z3      %p
-            -k/m*I3     -d/m*I3     Z3      Z3      %v
-            Z3          Z3          Z3      Tt*I3   %attitude
-            Z3          Z3         -g/l*I3 -d*I3];  %angular velocities
-
-    B_model =   [Z3             Z3
-                R_nb*I3/m       Z3 
-                Z3              Z3
-                Z3              Tt*I3/(m*r)];
-
-    C_model  = [I3 Z3 Z3 Z3
-                Z3 Z3 I3 Z3];
             
-    % Standing still
-    
+    % Standing still or straight line motion
     A_model = [ Z3  I3  Z3  Z3
                 Z3  Z3  Z3  Z3
                 Z3  Z3  Z3  I3
@@ -136,6 +138,22 @@ for i = 2:N
     C_model  = [I3 Z3 Z3 Z3
                 Z3 Z3 I3 Z3];
             
+    if (case_3) % overwrite true state dynamics        
+        % Mass-spring-damper
+        A_model = [Z3       I3      Z3          Z3      %p
+                -k/m*I3     -d/m*I3     Z3      Z3      %v
+                Z3          Z3          Z3      Tt*I3   %attitude
+                Z3          Z3         -g/l*I3 -d*I3];  %angular velocities
+
+        B_model =   [Z3             Z3
+                    R_nb*I3/m       Z3 
+                    Z3              Z3
+                    Z3              Tt*I3/(m*r)];
+
+        C_model  = [I3 Z3 Z3 Z3
+                    Z3 Z3 I3 Z3];
+    end
+            
     % 10 Hz update
     count = count + 1;
     if count >= 10
@@ -146,8 +164,15 @@ for i = 2:N
         %y = C_model * x + [std_pos * randn(1) * ones(1, 3) std_att * randn(1) * ones(1, 3)]';             
         y_ins = C_ins*x_ins;
         
-        y(1:3,1) = pos(:,i);
-        y(4:6,1) = [0 , 0, 45]' * deg2rad;
+        if (case_1)
+            y(1:3,1) = [100, 100, 0];
+            y(4:6,1) = [0, 0, deg2rad*45];
+        elseif (case_2)
+            y(1:3,1) = pos(:,i);
+            y(4:6,1) = [0 , 0, 45]' * deg2rad;
+        else
+            y = C_model * x
+        end
         
         y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]'
         
@@ -170,8 +195,13 @@ for i = 2:N
     end
     
     %plant
-    % u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
     u = [ [0 0 0]' ; [0 0 0]' ]; 
+    
+    if (case_3) 
+        u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
+    end
+    
+        
     % u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
     xdot = A_model * x + B_model * u;
     
