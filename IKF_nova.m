@@ -78,7 +78,7 @@ if (case_2)
     
     % Modify init values
     x(1:3) = [10 10 0]'; % position
-    x(4:6) = [5*sqrt(2) 5*sqrt(2) 0]';
+    x(4:6) = [1 1 0]';
     x(7:9) = deg2rad*[0 0 45]';
 
 end
@@ -171,10 +171,10 @@ for i = 2:N
             y(1:3,1) = pos(:,i);
             y(4:6,1) = [0 , 0, 45]' * deg2rad;
         else
-            y = C_model * x
+            y = C_model * x;
         end
         
-        y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]'
+        y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]';
         
 %         [px,py,pz] = llh2flat(SKID.vcu_GNSS_longitude(i),SKID.vcu_GNSS_latitude(i),SKID.vcu_GNSS_altitude(i),SKID.vcu_GNSS_longitude(2),SKID.vcu_GNSS_latitude(2),SKID.vcu_GNSS_altitude(2)); 
         
@@ -437,8 +437,8 @@ function delta_x = IndirectKalman(delta_y, R_nb, Tt, init)
     Z3 = zeros(3,3);
     I3 = eye(3);
     
-    Tacc = 100;
-    Tars = 100;
+    Tacc = 200;
+    Tars = 200;
 
     persistent P_hat Q R
     if init
