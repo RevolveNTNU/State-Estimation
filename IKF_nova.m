@@ -58,16 +58,21 @@ angvel_est = zeros(3, N);
 % Simulator
 
 % choose only one case
-case_1 = false;
-case_2 = true;
-case_3 = false;
+% 1 - Standing still at position [100,100,0]' with attitide
+%     deg2rad*[0,0,45]'
+% 2 - Driving on a straight line starting at position [10,10,0]' with 
+%     constant velocity of 10 m/s and orientation deg2rad*[0,0,45]
+% 3 - Vehicle model provided in TK8109 based on mass-spring-samper system
+%     with sinusoidal acceleration and angular rate input
+% 4 - Circular motion 
 
-if (case_1)
+SIM_CASE = 4;
+
+if (SIM_CASE == 1)
     x(1:3) = [100 100 0]'; % position
     x(7:9) = [0 0 deg2rad*45]'; % attitude
-end
 
-if (case_2)
+elseif (SIM_CASE == 2)
     % Create position measurements
     pos = zeros(3,N);
     pos(1:3, 1) = [10 10 0]';
@@ -79,9 +84,32 @@ if (case_2)
     % Modify init values
     x(1:3) = [10 10 0]'; % position
     x(4:6) = [5*sqrt(2) 5*sqrt(2) 0]';
-    x(7:9) = deg2rad*[0 0 45]';
+    x(7:9) = deg2rad*[0 0 45]';    
+elseif (SIM_CASE == 3)
+    % keep initi values
+elseif (SIM_CASE == 4)
+    R = 50;
+    abs_vel = 5.2359877;
 
+    pos = zeros(3,N);
+    pos(1:3, 1) = [0,-50,0]';
+
+    att = zeros(3,N);
+    att(1:3, 1) = [0,0,0]';
+    
+    alpha = pi/3000;
+    for i = 2:N
+        alpha = alpha + pi/3000; 
+        pos(1:3, i) = [R*sin(alpha),R*cos(alpha),0]';
+        att(1:3, i) = [0,0,alpha]';
+    end
+    
+    x(1:3) = [0,-50,0]';
+    x(4:6) = [abs_vel,0,0]';
+    x(7:9) = [0,0,0]';
+    
 end
+
 
 count = 10;
 for i = 2:N
@@ -123,7 +151,7 @@ for i = 2:N
 
     %plant 
             
-    % Standing still or straight line motion
+    if (SIM_CASE == 1 || SIM_CASE == 2 || SIM_CASE == 4) 
     A_model = [ Z3  I3  Z3  Z3
                 Z3  Z3  Z3  Z3
                 Z3  Z3  Z3  I3
@@ -138,8 +166,10 @@ for i = 2:N
     C_model  = [I3 Z3 Z3 Z3
                 Z3 Z3 I3 Z3];
             
-    if (case_3) % overwrite true state dynamics        
+            
+    elseif (SIM_CASE == 3)        
         % Mass-spring-damper
+        
         A_model = [Z3       I3      Z3          Z3      %p
                 -k/m*I3     -d/m*I3     Z3      Z3      %v
                 Z3          Z3          Z3      Tt*I3   %attitude
@@ -164,14 +194,17 @@ for i = 2:N
         %y = C_model * x + [std_pos * randn(1) * ones(1, 3) std_att * randn(1) * ones(1, 3)]';             
         y_ins = C_ins*x_ins;
         
-        if (case_1)
+        if (SIM_CASE == 1)
             y(1:3,1) = [100, 100, 0];
             y(4:6,1) = [0, 0, deg2rad*45];
-        elseif (case_2)
+        elseif (SIM_CASE == 2)
             y(1:3,1) = pos(:,i);
             y(4:6,1) = [0 , 0, 45]' * deg2rad;
-        else
+        elseif (SIM_CASE == 3)
             y = C_model * x;
+        elseif (SIM_CASE == 4)
+            y(1:3,1) = pos(:,i);
+            y(4:6,1) = att(:,i);
         end
         
         y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]';
@@ -194,17 +227,18 @@ for i = 2:N
         x_ins = x_ins + delta_x;
     end
     
-    %plant
-    u = [ [0 0 0]' ; [0 0 0]' ]; 
-    
-    if (case_3) 
+    % true input
+    if (SIM_CASE == 1 || SIM_CASE == 2)
+         u = [ [0 0 0]' ; [0 0 0]' ]; 
+    elseif (SIM_CASE == 3 ) 
         u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
+    elseif (SIM_CASE == 4)
+        u = [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/30]']; 
     end
-    
         
     % u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
-    xdot = A_model * x + B_model * u;
     
+    xdot = A_model * x + B_model * u;
     
     a_b_nb  = xdot(4:6);
     acc_noise = std_acc*randn(3, 1);
@@ -422,11 +456,11 @@ ylabel('Yaw bias [deg]')
 figure(6)
 figure(gcf)
 subplot(1, 1, 1)
-plot(xpos, ypos, 'Color', 'black', 'Linewidth', 1.5);
+plot(-ypos, xpos, 'Color', 'black', 'Linewidth', 1.5);
 %legend('bias', 'est bias');
 %legend('True', 'Est');
-xlabel('X position [m]');
-ylabel('Y position [m]');
+xlabel('Y position [m]');
+ylabel('X position [m]');
 title('Position Plot');
 
 
