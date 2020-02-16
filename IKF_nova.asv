@@ -66,7 +66,7 @@ angvel_est = zeros(3, N);
 %     with sinusoidal acceleration and angular rate input
 % 4 - Circular motion 
 
-SIM_CASE = 3;
+SIM_CASE = 2;
 
 if (SIM_CASE == 1)
     x(1:3) = [100 100 0]'; % position
@@ -89,8 +89,8 @@ elseif (SIM_CASE == 3)
     % keep initi values
 elseif (SIM_CASE == 4)
     R = 50;
-    abs_vel = 5.2359877;
-    pi = 
+    abs_vel = (2 * R * pi) / 30;
+
     pos = zeros(3,N);
     pos(1:3, 1) = [0,-50,0]';
 
@@ -99,14 +99,14 @@ elseif (SIM_CASE == 4)
     
     alpha = pi/3000;
     for i = 2:N
-        alpha = alpha + pi/3000; 
-        pos(1:3, i) = [R*sin(alpha),R*cos(alpha),0]';
-        att(1:3, i) = [0,0,alpha]';
+        alpha = (i-1) * (pi/3000); 
+        pos(1:3, i) = [R*sin(alpha) R*cos(alpha) 0]';
+        att(1:3, i) = [0 0 alpha]';
     end
     
-    x(1:3) = [0,-50,0]';
-    x(4:6) = [abs_vel,0,0]';
-    x(7:9) = [0,0,0]';
+    x(1:3) = [0 -50 0]';
+    x(4:6) = [abs_vel 0 0]';
+    x(7:9) = [0 0 0]';
     
 end
 
@@ -233,7 +233,7 @@ for i = 2:N
     elseif (SIM_CASE == 3 ) 
         u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
     elseif (SIM_CASE == 4)
-        u = [[-(abs_vel^2)/R * cos(x(9)), -(abs_vel^2)/R * sin(x(9)), 0]' ; [0,0,pi/30]']; 
+        u = [[-(abs_vel^2)/R * sind(rad2deg*x(9)), (abs_vel^2)/R * cosd(rad2deg*x(9)), 0]' ; [0,0,pi/30]']; 
     end
         
     % u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
@@ -357,6 +357,7 @@ xlabel('Time [s]');
 ylabel('Z position [m]')
 legend('True', 'Meas', 'Est');
 
+
 % ATTITUDE 
 figure(2)
 figure(gcf);
@@ -452,18 +453,31 @@ legend('True', 'Est');
 xlabel('Time [s]');
 ylabel('Yaw bias [deg]')
 
-% POSITION MAP
-figure(6)
-figure(gcf)
-subplot(1, 1, 1)
-plot(xpos, ypos, 'Color', 'black', 'Linewidth', 1.5);
-%legend('bias', 'est bias');
-%legend('True', 'Est');
-xlabel('X position [m]');
-ylabel('Y position [m]');
-title('Position Plot');
+if (SIM_CASE == 2)
+    % POSITION MAP
+    figure(6)
+    figure(gcf)
+    subplot(1, 1, 1)
+    plot(pos(2,:), pos(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    %legend('bias', 'est bias');
+    %legend('True', 'Est');
+    xlabel('Y position [m]');
+    ylabel('X position [m]');
+    title('Position Plot');
 
+% 
+%     % ATTITUDE MAP
+%     figure(7)
+%     figure(gcf)
+%     subplot(1, 1, 1)
+%     plot(t, att(3,:), 'Color', 'black', 'Linewidth', 1.5);
+%     %legend('bias', 'est bias');
+%     %legend('True', 'Est');
+%     xlabel('time [s]');
+%     ylabel('yaw [m]');
+%     title('Attitude Plot');
 
+end
 %% functions
 
 function S = ScrewSym(x)

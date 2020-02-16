@@ -8,7 +8,7 @@ close all;
 deg2rad = pi/180;   
 rad2deg = 180/pi;
 
-simtime = 60;
+simtime = 240;
 f_samp  = 100;          %imu frequency
 h       = 1/f_samp;     %sampling time
 N       = simtime/h;    %number of iterations
@@ -89,7 +89,7 @@ elseif (SIM_CASE == 3)
     % keep initi values
 elseif (SIM_CASE == 4)
     R = 50;
-    abs_vel = 5.2359877;
+    abs_vel = (2 * R * pi) / 30;
 
     pos = zeros(3,N);
     pos(1:3, 1) = [0,-50,0]';
@@ -99,14 +99,14 @@ elseif (SIM_CASE == 4)
     
     alpha = pi/3000;
     for i = 2:N
-        alpha = alpha + pi/3000; 
-        pos(1:3, i) = [R*sin(alpha),R*cos(alpha),0]';
-        att(1:3, i) = [0,0,alpha]';
+        alpha = (i-1) * (pi/3000); 
+        pos(1:3, i) = [R*sin(alpha) R*cos(alpha) 0]';
+        att(1:3, i) = [0 0 alpha]';
     end
     
-    x(1:3) = [0,-50,0]';
-    x(4:6) = [abs_vel,0,0]';
-    x(7:9) = [0,0,0]';
+    x(1:3) = [0 -50 0]';
+    x(4:6) = [abs_vel 0 0]';
+    x(7:9) = [0 0 0]';
     
 end
 
@@ -151,7 +151,7 @@ for i = 2:N
 
     %plant 
             
-    if (SIM_CASE == 1 || SIM_CASE == 2 || SIM_CASE == 4) 
+    if (SIM_CASE == 1 || SIM_CASE == 2 ) 
     A_model = [ Z3  I3  Z3  Z3
                 Z3  Z3  Z3  Z3
                 Z3  Z3  Z3  I3
@@ -167,7 +167,7 @@ for i = 2:N
                 Z3 Z3 I3 Z3];
             
             
-    elseif (SIM_CASE == 3)        
+    elseif (SIM_CASE == 3 || SIM_CASE == 4)        
         % Mass-spring-damper
         
         A_model = [Z3       I3      Z3          Z3      %p
@@ -357,6 +357,7 @@ xlabel('Time [s]');
 ylabel('Z position [m]')
 legend('True', 'Meas', 'Est');
 
+
 % ATTITUDE 
 figure(2)
 figure(gcf);
@@ -452,18 +453,43 @@ legend('True', 'Est');
 xlabel('Time [s]');
 ylabel('Yaw bias [deg]')
 
-% POSITION MAP
-figure(6)
-figure(gcf)
-subplot(1, 1, 1)
-plot(-ypos, xpos, 'Color', 'black', 'Linewidth', 1.5);
-%legend('bias', 'est bias');
-%legend('True', 'Est');
-xlabel('Y position [m]');
-ylabel('X position [m]');
-title('Position Plot');
+if (SIM_CASE == 2)
+    % POSITION MAP
+    figure(6)
+    figure(gcf)
+    subplot(1, 1, 1)
+    plot(pos(2,:), pos(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    %legend('bias', 'est bias');
+    %legend('True', 'Est');
+    xlabel('Y position [m]');
+    ylabel('X position [m]');
+    title('Position Plot');
 
+% 
+%     % ATTITUDE MAP
+%     figure(7)
+%     figure(gcf)
+%     subplot(1, 1, 1)
+%     plot(t, att(3,:), 'Color', 'black', 'Linewidth', 1.5);
+%     %legend('bias', 'est bias');
+%     %legend('True', 'Est');
+%     xlabel('time [s]');
+%     ylabel('yaw [m]');
+%     title('Attitude Plot');
 
+end
+
+if (SIM_CASE == 4)
+    % POSITION MAP
+    figure(6)
+    figure(gcf)
+    subplot(1, 1, 1)
+    plot(ypos_ins, xpos_ins, 'Color', 'black', 'Linewidth', 1.5);
+    xlabel('Y position [m]');
+    ylabel('X position [m]');
+    title('Position Plot');
+end
+    
 %% functions
 
 function S = ScrewSym(x)
