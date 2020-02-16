@@ -110,7 +110,6 @@ elseif (SIM_CASE == 4)
     
 end
 
-
 count = 10;
 for i = 2:N
     t = (i-1) * h;   
@@ -151,7 +150,7 @@ for i = 2:N
 
     %plant 
             
-    if (SIM_CASE == 1 || SIM_CASE == 2 ) 
+    if (SIM_CASE == 1 || SIM_CASE == 2) 
     A_model = [ Z3  I3  Z3  Z3
                 Z3  Z3  Z3  Z3
                 Z3  Z3  Z3  I3
@@ -167,7 +166,7 @@ for i = 2:N
                 Z3 Z3 I3 Z3];
             
             
-    elseif (SIM_CASE == 3 || SIM_CASE == 4)        
+    elseif (SIM_CASE == 3 || SIM_CASE == 4 )        
         % Mass-spring-damper
         
         A_model = [Z3       I3      Z3          Z3      %p
@@ -245,13 +244,12 @@ for i = 2:N
     w_b_nb  = xdot(7:9);
     ars_noise = std_ars*randn(3, 1);
        
-    f_imu_b = a_b_nb + ScrewSym(x(10:12)) * x(7:9) + acc_bias + acc_noise;
     
     % f_imu_b = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i)]';
     % w_imu = [SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]';
     
     % Strapdown INS equations
-     xdot_ins = A_ins * x_ins + B_ins * [f_imu_b;(w_b_nb + ars_bias + ars_noise)];
+     %xdot_ins = A_ins * x_ins + B_ins * [f_imu_b;(w_b_nb + ars_bias + ars_noise)];
      
     
 %     xdot_ins(1:3) = x_ins(4:6);
@@ -259,10 +257,20 @@ for i = 2:N
 %     xdot_ins(7:9) = zeros(1,3)';
 %     xdot_ins(10:12) = Tt*(w_b_nb + ars_noise);
 %     xdot_ins(13:15) = zeros(1,3)';
+    
+    f_imu_b = a_b_nb + ScrewSym(x(10:12)) * x(7:9) + acc_bias + acc_noise;
+    w_b_imu = w_b_nb + ars_bias + ars_noise;
+
+    
+    x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * (R_nb*(f_imu_b) + g*[0 0 1]'));
+    x_ins(4:6) = x_ins(4:6) +  (h * R_nb*(f_imu_b - acc_bias));
+    x_ins(7:9) = x_ins(7:9);
+    x_ins(10:12) = x_ins(10:12) + h*(w_b_imu - ars_bias);
+    x_ins(13:15) = x_ins(13:15); 
          
     % Euler integration (k+1)
     x = x + h * xdot;
-    x_ins = x_ins + h * xdot_ins;
+    %x_ins = x_ins + h * xdot_ins;
     
     
 end
