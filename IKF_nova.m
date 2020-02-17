@@ -8,7 +8,7 @@ close all;
 deg2rad = pi/180;   
 rad2deg = 180/pi;
 
-simtime = 240;
+simtime = 60;
 f_samp  = 100;          %imu frequency
 h       = 1/f_samp;     %sampling time
 N       = simtime/h;    %number of iterations
@@ -65,8 +65,9 @@ angvel_est = zeros(3, N);
 % 3 - Vehicle model provided in TK8109 based on mass-spring-samper system
 %     with sinusoidal acceleration and angular rate input
 % 4 - Circular motion 
+% 5 - Skidpad
 
-SIM_CASE = 4;
+SIM_CASE = 5;
 
 if (SIM_CASE == 1)
     x(1:3) = [100 100 0]'; % position
@@ -108,9 +109,44 @@ elseif (SIM_CASE == 4)
     x(4:6) = [abs_vel 0 0]';
     x(7:9) = [0 0 0]';
     
+elseif (SIM_CASE == 5)
+ 
+    R = 50;
+    abs_vel = (2 * R * pi) / 30; % v = s / t
+
+    pos = zeros(3,N);
+    pos(1:3, 1) = [0,-50,0]';
+
+    att = zeros(3,N);
+    att(1:3, 1) = [0,0,0]';
+    
+    alpha = pi/3000;
+    dir = 1;
+    skip = false;
+    for i = 2:N
+        alpha = alpha + (pi/1500); 
+        
+        if (alpha >= pi)
+            alpha = 0;
+            if (skip == false)
+                dir = -1*dir;
+            end
+            skip = ~skip;
+        end
+            
+        pos(1:3, i) = dir * [R*sin(alpha) (-50 - R*cos(alpha)) 0]';
+        att(1:3, i) = att(1:3, i-1) + (dir * [0 0 pi/3000]');
+    end
+    
+    x(1:3) = [0 -50 0]';
+    x(4:6) = [abs_vel 0 0]';
+    x(7:9) = [0 0 0]';
+    
 end
 
 count = 10;
+dir = 1;
+skip = false;
 for i = 2:N
     t = (i-1) * h;   
     
@@ -166,7 +202,7 @@ for i = 2:N
                 Z3 Z3 I3 Z3];
             
             
-    elseif (SIM_CASE == 3 || SIM_CASE == 4 )        
+    elseif (SIM_CASE == 3 || SIM_CASE == 4 || SIM_CASE == 5)        
         % Mass-spring-damper
         
         A_model = [Z3       I3      Z3          Z3      %p
@@ -201,7 +237,7 @@ for i = 2:N
             y(4:6,1) = [0 , 0, 45]' * deg2rad;
         elseif (SIM_CASE == 3)
             y = C_model * x;
-        elseif (SIM_CASE == 4)
+        elseif (SIM_CASE == 4 || SIM_CASE == 5)
             y(1:3,1) = pos(:,i);
             y(4:6,1) = att(:,i);
         end
@@ -232,7 +268,15 @@ for i = 2:N
     elseif (SIM_CASE == 3 ) 
         u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
     elseif (SIM_CASE == 4)
-        u = [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/30]']; 
+        u = [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/30]'];
+    elseif (SIM_CASE == 5)
+        if (mod(x_ins(9),pi) == 0)
+            if (skip == false)
+                dir = -1*dir
+            end
+            skip = ~skip
+        end
+         u = dir * [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/15]'];
     end
         
     % u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
@@ -261,7 +305,7 @@ for i = 2:N
     f_imu_b = a_b_nb + ScrewSym(x(10:12)) * x(7:9) + acc_bias + acc_noise;
     w_b_imu = w_b_nb + ars_bias + ars_noise;
 
-    
+    % Discret INS model
     x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * (R_nb*(f_imu_b) + g*[0 0 1]'));
     x_ins(4:6) = x_ins(4:6) +  (h * R_nb*(f_imu_b - acc_bias));
     x_ins(7:9) = x_ins(7:9);
@@ -487,7 +531,7 @@ if (SIM_CASE == 2)
 
 end
 
-if (SIM_CASE == 4)
+if (SIM_CASE == 4 || SIM_CASE == 5)
     % POSITION MAP
     figure(6)
     figure(gcf)
@@ -497,6 +541,15 @@ if (SIM_CASE == 4)
     ylabel('X position [m]');
     title('Position Plot');
 end
+
+    % POSITION MAP
+    figure(7)
+    figure(gcf)
+    subplot(1, 1, 1)
+    plot(-pos(2,:), pos(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    xlabel('Y position [m]');
+    ylabel('X position [m]');
+    title('Position Plot');
     
 %% functions
 
