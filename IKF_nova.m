@@ -115,27 +115,30 @@ elseif (SIM_CASE == 5)
     abs_vel = (2 * R * pi) / 30; % v = s / t
 
     pos = zeros(3,N);
-    pos(1:3, 1) = [0,-50,0]';
+    pos(1:3, 1) = [0,-100,0]';
 
     att = zeros(3,N);
     att(1:3, 1) = [0,0,0]';
     
-    alpha = pi/3000;
+    alpha = pi/1500;
     dir = 1;
     skip = false;
     for i = 2:N
-        alpha = alpha + (pi/1500); 
+        alpha = alpha + dir*(pi/1500); 
         
-        if (alpha >= pi)
+        if (abs(alpha) >= pi)
             alpha = 0;
+            disp(i);
+            disp(rad2deg*att(1:3,i-1));
+            disp(pos(1:3,i-1));
             if (skip == false)
-                dir = -1*dir;
+                dir = -1*dir
             end
             skip = ~skip;
         end
             
-        pos(1:3, i) = dir * [R*sin(alpha) (-50 - R*cos(alpha)) 0]';
-        att(1:3, i) = att(1:3, i-1) + (dir * [0 0 pi/3000]');
+        pos(1:3, i) =  [R*sin(alpha) (-50*dir - R*cos(alpha)) 0]';
+        att(1:3, i) = att(1:3, i-1) + (dir * [0 0 pi/1500]');
     end
     
     x(1:3) = [0 -50 0]';
@@ -270,11 +273,12 @@ for i = 2:N
     elseif (SIM_CASE == 4)
         u = [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/30]'];
     elseif (SIM_CASE == 5)
-        if (mod(x_ins(9),pi) == 0)
+        if (mod(x_ins(12),pi) <= 0.001)
+            
             if (skip == false)
-                dir = -1*dir
+                dir = -1*dir;
             end
-            skip = ~skip
+            skip = ~skip;
         end
          u = dir * [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/15]'];
     end
