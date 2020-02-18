@@ -1,4 +1,4 @@
-function [p_n_nb,v_n_nb,att_n_nb] = CircleSim(simtime ,frequency)
+function [p_n_nb,v_n_nb,att_n_nb,f_b_imu, w_b_imu,time] = CircleSim(simtime ,frequency, enable_plots)
 %CIRCLESIM Summary of this function goes here
 %   Radius = 50 [m]
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
@@ -42,7 +42,7 @@ for i = 2:N
 
     [J,R_nb,T_nb] = eulerang(phi, theta, psi);
 
-    f_b_imu = a_b_nb + Smtrx(w_b_nb)*v_b_nb; % - (R_nb')*[0 0 g]'; 
+    f_b_imu = a_b_nb + Smtrx(w_b_nb)*v_b_nb; % - (R_nb')*[0 0 g]'; ??
     w_b_imu = w_b_nb;
 
     p_n_nb(1:3, i) = p_n_nb(1:3, i-1) + (h * v_n_nb(1:3, i-1)) + (0.5 * h * h * f_b_imu);
@@ -58,85 +58,86 @@ end
 
 % PLOTS
 
+if (enable_plots)
+    % Position
+    figure(1)
+    figure(gcf);
+    subplot(3, 1, 1)
+    hold on;
+    plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    ylabel('X position [m]')
+    legend('True');
+    title('Position');
 
-% Position
-figure(1)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('X position [m]')
-legend('True');
-title('Position');
+    subplot(3, 1, 2)
+    hold on;
+    plot(time, p_n_nb(2,:), 'Color', 'black', 'Linewidth', 1.5);
+    ylabel('Y position [m]')
+    legend('True');
 
-subplot(3, 1, 2)
-hold on;
-plot(time, p_n_nb(2,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('Y position [m]')
-legend('True');
-
-subplot(3, 1, 3)
-hold on;
-plot(time, p_n_nb(3,:), 'Color', 'black', 'Linewidth', 1.5);
-xlabel('Time [s]');
-ylabel('Z position [m]')
-legend('True');
+    subplot(3, 1, 3)
+    hold on;
+    plot(time, p_n_nb(3,:), 'Color', 'black', 'Linewidth', 1.5);
+    xlabel('Time [s]');
+    ylabel('Z position [m]')
+    legend('True');
 
 
-% Velocity
-figure(2)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, v_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('X velocity [m]')
-legend('True');
-title('Velocity');
+    % Velocity
+    figure(2)
+    figure(gcf);
+    subplot(3, 1, 1)
+    hold on;
+    plot(time, v_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    ylabel('X velocity [m]')
+    legend('True');
+    title('Velocity');
 
-subplot(3, 1, 2)
-hold on;
-plot(time, v_n_nb(2,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('Y velocity [m]')
-legend('True');
+    subplot(3, 1, 2)
+    hold on;
+    plot(time, v_n_nb(2,:), 'Color', 'black', 'Linewidth', 1.5);
+    ylabel('Y velocity [m]')
+    legend('True');
 
-subplot(3, 1, 3)
-hold on;
-plot(time, v_n_nb(3,:), 'Color', 'black', 'Linewidth', 1.5);
-xlabel('Time [s]');
-ylabel('Z velocity [m]')
-legend('True');
+    subplot(3, 1, 3)
+    hold on;
+    plot(time, v_n_nb(3,:), 'Color', 'black', 'Linewidth', 1.5);
+    xlabel('Time [s]');
+    ylabel('Z velocity [m]')
+    legend('True');
 
-% Attitude
-figure(3)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('Roll [m]')
-legend('True');
-title('Attitude');
+    % Attitude
+    figure(3)
+    figure(gcf);
+    subplot(3, 1, 1)
+    hold on;
+    plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    ylabel('Roll [m]')
+    legend('True');
+    title('Attitude');
 
-subplot(3, 1, 2)
-hold on;
-plot(time, rad2deg*att_n_nb(2,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('Pitch [m]')
-legend('True');
+    subplot(3, 1, 2)
+    hold on;
+    plot(time, rad2deg*att_n_nb(2,:), 'Color', 'black', 'Linewidth', 1.5);
+    ylabel('Pitch [m]')
+    legend('True');
 
-subplot(3, 1, 3)
-hold on;
-plot(time, rad2deg*att_n_nb(3,:), 'Color', 'black', 'Linewidth', 1.5);
-xlabel('Time [s]');
-ylabel('Yaw [m]')
-legend('True');
+    subplot(3, 1, 3)
+    hold on;
+    plot(time, rad2deg*att_n_nb(3,:), 'Color', 'black', 'Linewidth', 1.5);
+    xlabel('Time [s]');
+    ylabel('Yaw [m]')
+    legend('True');
 
-% Position map
-figure(6)
-figure(gcf)
-subplot(1, 1, 1)
-plot(-p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-xlabel('Y position [m]');
-ylabel('X position [m]');
-title('Position Plot');
+    % Position map
+    figure(6)
+    figure(gcf)
+    subplot(1, 1, 1)
+    plot(-p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+    xlabel('Y position [m]');
+    ylabel('X position [m]');
+    title('Position Plot');
+end
     
 end
 
