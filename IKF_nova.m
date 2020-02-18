@@ -97,10 +97,10 @@ elseif (SIM_CASE == 4)
     att = zeros(3,N);
     att(1:3, 1) = [0,0,0]';
     
-    alpha = pi/3000;
+    alpha = 0;
     for i = 2:N
-        alpha = (i-1) * (pi/3000); 
-        pos(1:3, i) = [R*sin(alpha) R*cos(alpha) 0]';
+        alpha = alpha + (pi/1500); 
+        pos(1:3, i) = [R*sin(alpha) -R*cos(alpha) 0]';
         att(1:3, i) = [0 0 alpha]';
     end
     
@@ -108,7 +108,15 @@ elseif (SIM_CASE == 4)
     x(4:6) = [abs_vel 0 0]';
     x(7:9) = [0 0 0]';
     
+    x_ins(1:3) = [0 -50 0]';
+    x_ins(4:6) = [abs_vel 0 0]';
+    x_ins(7:9) = [0 0 0]';
+    
+    
+    
 end
+
+
 
 count = 10;
 for i = 2:N
@@ -122,7 +130,7 @@ for i = 2:N
     sim_data(4:6,i) = sim_data(4:6,i); 
     sim_data_noise(:,i) = xnoise;
     ins_data(:,i) = x_ins;
-    bias_data(:,i) = [acc_bias; rad2deg*ars_bias];
+    %bias_data(:,i) = [acc_bias; rad2deg*ars_bias];
     
     %euler angles
     phi     = x(7);
@@ -131,100 +139,103 @@ for i = 2:N
     
     [J, R_nb, Tt] = eulerang(phi, theta, psi);
     
+    
+    
+    
+%     % Strapdown INS
+%     A_ins = [Z3 I3 Z3 Z3 Z3         %p
+%              Z3 Z3 -R_nb*I3 Z3 Z3   %v
+%              Z3 Z3 Z3 Z3 Z3         %acc_bias
+%              Z3 Z3 Z3 Z3 -Tt*I3     %theta
+%              Z3 Z3 Z3 Z3 Z3];       %ars_bias
+% 
+%     B_ins = [Z3 Z3
+%              R_nb*I3 Z3
+%              Z3 Z3
+%              Z3 Tt*I3
+%              Z3 Z3];
 
-    % Strapdown INS
-    A_ins = [Z3 I3 Z3 Z3 Z3         %p
-             Z3 Z3 -R_nb*I3 Z3 Z3   %v
-             Z3 Z3 Z3 Z3 Z3         %acc_bias
-             Z3 Z3 Z3 Z3 -Tt*I3     %theta
-             Z3 Z3 Z3 Z3 Z3];       %ars_bias
-         
-    B_ins = [Z3 Z3
-             R_nb*I3 Z3
-             Z3 Z3
-             Z3 Tt*I3
-             Z3 Z3];
-         
      C_ins = [I3 Z3 Z3 Z3 Z3
               Z3 Z3 Z3 I3 Z3];
-
-    %plant 
-            
-    if (SIM_CASE == 1 || SIM_CASE == 2) 
-    A_model = [ Z3  I3  Z3  Z3
-                Z3  Z3  Z3  Z3
-                Z3  Z3  Z3  I3
-                Z3  Z3  Z3  Z3] ;
-            
-    
-    B_model =   [Z3             Z3
-                R_nb*I3         Z3 
-                Z3              Z3
-                Z3              Tt*I3];
-
-    C_model  = [I3 Z3 Z3 Z3
-                Z3 Z3 I3 Z3];
-            
-            
-    elseif (SIM_CASE == 3 || SIM_CASE == 4 )        
-        % Mass-spring-damper
-        
-        A_model = [Z3       I3      Z3          Z3      %p
-                -k/m*I3     -d/m*I3     Z3      Z3      %v
-                Z3          Z3          Z3      Tt*I3   %attitude
-                Z3          Z3         -g/l*I3 -d*I3];  %angular velocities
-
-        B_model =   [Z3             Z3
-                    R_nb*I3/m       Z3 
-                    Z3              Z3
-                    Z3              Tt*I3/(m*r)];
+% 
+%     %plant 
+% 
+%     if (SIM_CASE == 1 || SIM_CASE == 2) 
+%     A_model = [ Z3  I3  Z3  Z3
+%                 Z3  Z3  Z3  Z3
+%                 Z3  Z3  Z3  I3
+%                 Z3  Z3  Z3  Z3] ;
+% 
+% 
+%     B_model =   [Z3             Z3
+%                 R_nb*I3         Z3 
+%                 Z3              Z3
+%                 Z3              Tt*I3];
+% 
+%     C_model  = [I3 Z3 Z3 Z3
+%                 Z3 Z3 I3 Z3];
+% 
+% 
+%     elseif (SIM_CASE == 3 || SIM_CASE == 4 )        
+%         % Mass-spring-damper
+% 
+%         A_model = [Z3       I3      Z3          Z3      %p
+%                 -k/m*I3     -d/m*I3     Z3      Z3      %v
+%                 Z3          Z3          Z3      Tt*I3   %attitude
+%                 Z3          Z3         -g/l*I3 -d*I3];  %angular velocities
+% 
+%         B_model =   [Z3             Z3
+%                     R_nb*I3/m       Z3 
+%                     Z3              Z3
+%                     Z3              Tt*I3/(m*r)];
 
         C_model  = [I3 Z3 Z3 Z3
                     Z3 Z3 I3 Z3];
-    end
+%     end
+
             
     % 10 Hz update
     count = count + 1;
-    if count >= 10
-        count = 0;
-        
-        % Measurements
-        xnoise = x + [std_pos * randn(1) * ones(1, 3) 0 0 0 std_att * randn(1) * ones(1, 3) 0 0 0]';
-        %y = C_model * x + [std_pos * randn(1) * ones(1, 3) std_att * randn(1) * ones(1, 3)]';             
-        y_ins = C_ins*x_ins;
-        
-        if (SIM_CASE == 1)
-            y(1:3,1) = [100, 100, 0];
-            y(4:6,1) = [0, 0, deg2rad*45];
-        elseif (SIM_CASE == 2)
-            y(1:3,1) = pos(:,i);
-            y(4:6,1) = [0 , 0, 45]' * deg2rad;
-        elseif (SIM_CASE == 3)
-            y = C_model * x;
-        elseif (SIM_CASE == 4)
-            y(1:3,1) = pos(:,i);
-            y(4:6,1) = att(:,i);
-        end
-        
-        y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]';
-        
-%         [px,py,pz] = llh2flat(SKID.vcu_GNSS_longitude(i),SKID.vcu_GNSS_latitude(i),SKID.vcu_GNSS_altitude(i),SKID.vcu_GNSS_longitude(2),SKID.vcu_GNSS_latitude(2),SKID.vcu_GNSS_altitude(2)); 
-        
-%         y(1) = 0.2 * -px;
-%         y(2) = 0.2 * -py;
-%         y(3) = 0.2 * -pz;
+%     if count >= 10
+%         count = 0;
 %         
-%         y(4) = deg2rad * SKID.vcu_INS_roll(i);
-%         y(5) = deg2rad * SKID.vcu_INS_pitch(i);
-%         y(6) = deg2rad * SKID.vcu_INS_yaw(i);
-         
-        
-        delta_y = y - y_ins;
-        
-        delta_x = IndirectKalman(delta_y, R_nb, Tt, 0);
-        
-        x_ins = x_ins + delta_x;
-    end
+%         % Measurements
+%         xnoise = x + [std_pos * randn(1) * ones(1, 3) 0 0 0 std_att * randn(1) * ones(1, 3) 0 0 0]';
+%         %y = C_model * x + [std_pos * randn(1) * ones(1, 3) std_att * randn(1) * ones(1, 3)]';             
+%         y_ins = C_ins*x_ins;
+%         
+%         if (SIM_CASE == 1)
+%             y(1:3,1) = [100, 100, 0];
+%             y(4:6,1) = [0, 0, deg2rad*45];
+%         elseif (SIM_CASE == 2)
+%             y(1:3,1) = pos(:,i);
+%             y(4:6,1) = [0 , 0, 45]' * deg2rad;
+%         elseif (SIM_CASE == 3)
+%             y = C_model * x;
+%         elseif (SIM_CASE == 4)
+%             y(1:3,1) = pos(:,i);
+%             y(4:6,1) = att(:,i);
+%         end
+%         
+%         y = y + [std_pos * randn(1) * ones(1, 3), std_att * randn(1) * ones(1, 3)]';
+%         
+% %         [px,py,pz] = llh2flat(SKID.vcu_GNSS_longitude(i),SKID.vcu_GNSS_latitude(i),SKID.vcu_GNSS_altitude(i),SKID.vcu_GNSS_longitude(2),SKID.vcu_GNSS_latitude(2),SKID.vcu_GNSS_altitude(2)); 
+%         
+% %         y(1) = 0.2 * -px;
+% %         y(2) = 0.2 * -py;
+% %         y(3) = 0.2 * -pz;
+% %         
+% %         y(4) = deg2rad * SKID.vcu_INS_roll(i);
+% %         y(5) = deg2rad * SKID.vcu_INS_pitch(i);
+% %         y(6) = deg2rad * SKID.vcu_INS_yaw(i);
+%          
+%         
+%         delta_y = y - y_ins;
+%         
+%         delta_x = IndirectKalman(delta_y, R_nb, Tt, 0);
+%         
+%         x_ins = x_ins + delta_x;
+%     end
     
     % true input
     if (SIM_CASE == 1 || SIM_CASE == 2)
@@ -232,16 +243,16 @@ for i = 2:N
     elseif (SIM_CASE == 3 ) 
         u = [5*[1 0.8 1.2]' * sin(.2*t); 2 * [1 -0.8 1.1]' * sin(.5 * t)];
     elseif (SIM_CASE == 4)
-        u = [[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/30]']; 
+        u = [0*[-(abs_vel^2)/R * sin(x(9)), (abs_vel^2)/R * cos(x(9)), 0]' ; [0,0,pi/15]']; 
     end
         
     % u = [SKID.vcu_INS_ax(i) SKID.vcu_INS_ay(i) SKID.vcu_INS_az(i) SKID.vcu_INS_roll_rate(i) SKID.vcu_INS_pitch_rate(i) SKID.vcu_INS_yaw_rate(i)]'; 
     
-    xdot = A_model * x + B_model * u;
+    %xdot = A_model * x + B_model * u;
     
-    a_b_nb  = xdot(4:6);
+    a_b_nb  = [0 0 0]';
     acc_noise = std_acc*randn(3, 1);
-    w_b_nb  = xdot(7:9);
+    w_b_nb  = [0 0 pi/15]';
     ars_noise = std_ars*randn(3, 1);
        
     
@@ -258,18 +269,34 @@ for i = 2:N
 %     xdot_ins(10:12) = Tt*(w_b_nb + ars_noise);
 %     xdot_ins(13:15) = zeros(1,3)';
     
-    f_imu_b = a_b_nb + ScrewSym(x(10:12)) * x(7:9) + acc_bias + acc_noise;
-    w_b_imu = w_b_nb + ars_bias + ars_noise;
-
+    f_b_imu = a_b_nb + ScrewSym(u(4:6)) * (R_nb') * x(4:6); % + acc_bias + acc_noise;
+    w_b_imu = w_b_nb ; %+ ars_bias + ars_noise;
     
-    x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * (R_nb*(f_imu_b) + g*[0 0 1]'));
-    x_ins(4:6) = x_ins(4:6) +  (h * R_nb*(f_imu_b - acc_bias));
+    
+    phi_ins     = x_ins(7);
+    theta_ins   = x_ins(8);
+    psi_ins     = x_ins(9);
+    
+    [J_ins, R_nb_ins, Tt_ins] = eulerang(phi_ins, theta_ins, psi_ins);
+    
+
+    a_n_ins = R_nb_ins*(f_b_imu - acc_bias);
+    
+    x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * a_n_ins);
+    x_ins(4:6) = x_ins(4:6) +  (h * a_n_ins);
     x_ins(7:9) = x_ins(7:9);
-    x_ins(10:12) = x_ins(10:12) + h*(w_b_imu - ars_bias);
+    x_ins(10:12) = x_ins(10:12) + h* Tt_ins *(w_b_imu - ars_bias);
     x_ins(13:15) = x_ins(13:15); 
+    
+    
          
+    x(1:3) = x(1:3) + (h * x(4:6));
+    x(4:6) = x(4:6) + (h * R_nb * u(1:3));
+    x(7:9) = x(7:9) + (h * Tt * u(4:6));
+    % x(10:12) = ((1 - h)* x(10:12)) - (h * x(7:9)) + (h * Tt * u(4:6)); 
+    
     % Euler integration (k+1)
-    x = x + h * xdot;
+    %x = x + h * xdot;
     %x_ins = x_ins + h * xdot_ins;
     
     
@@ -492,7 +519,7 @@ if (SIM_CASE == 4)
     figure(6)
     figure(gcf)
     subplot(1, 1, 1)
-    plot(ypos_ins, xpos_ins, 'Color', 'black', 'Linewidth', 1.5);
+    plot(-ypos_ins, xpos_ins, 'Color', 'black', 'Linewidth', 1.5);
     xlabel('Y position [m]');
     ylabel('X position [m]');
     title('Position Plot');
