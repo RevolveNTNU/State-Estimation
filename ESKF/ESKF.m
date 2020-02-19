@@ -8,7 +8,7 @@ rad2deg = 180/pi;
 Z3 = zeros(3,3);
 I3 = eye(3);
 
-simtime = 180;
+simtime = 240;
 f_samp  = 100;          %imu frequency
 h       = 1/f_samp;     %sampling time
 N       = simtime/h;    %number of iterations
@@ -18,6 +18,9 @@ delta_x = zeros(15, 1);
 x_ins = zeros(15, 1);
 y = zeros(6,1);
 
+std_pos = 2;
+std_att = 5 * deg2rad;
+
 %initialization of kalman filter
 ErrorStateKalman(0, 0, 0, 1);
 
@@ -26,7 +29,9 @@ time_data = zeros(1, N);
 ins_data = zeros(15, N);
 
 % from sim
-[p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = CircleSim(simtime,f_samp,0);
+%[p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = CircleSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
+
 
 % matrices
 C_ins = [I3 Z3 Z3 Z3 Z3
@@ -53,8 +58,8 @@ for i = 2:N
         count = 0;
         
         % perfect measurement
-        y(1:3) = p_n_nb(1:3,i);
-        y(4:6) = att_n_nb(1:3,i);
+        y(1:3) = p_n_nb(1:3,i); % + (std_pos * randn(1) * ones(1, 3))';
+        y(4:6) = att_n_nb(1:3,i); % + (std_pos * randn(1) * ones(1, 3))';
         
         y_ins = C_ins * x_ins;
         delta_y = y - y_ins;
@@ -64,8 +69,6 @@ for i = 2:N
         
    end
    
-
-    
    a_n_ins = R_nb_ins*f_b_imu;
     
    x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * a_n_ins);
@@ -84,23 +87,23 @@ figure(1)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ins_data(1,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(1,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time_data, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('X position [m]')
 legend('Est', 'True');
 title('Position');
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ins_data(2,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(2,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time_data, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y position [m]')
 legend('Est', 'True');
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ins_data(3,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(3,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time_data, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z position [m]')
 legend('Est', 'True');
 
@@ -109,23 +112,23 @@ figure(2)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ins_data(4,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(4,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time_data, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('X velocity [m]')
 legend('Est', 'True');
 title('Velocity');
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ins_data(5,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(5,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time_data, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y velocity [m]')
 legend('Est', 'True');
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ins_data(6,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(6,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time_data, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z velocity [m]')
 legend('Est', 'True');
 
@@ -134,23 +137,23 @@ figure(3)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, rad2deg*ins_data(10,:),'Color', 'blue', 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, rad2deg*ins_data(10,:),'Color', 'blue', 'Linewidth', 2);
+plot(time_data, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('Roll angle [deg]')
 legend('Est', 'True');
 title('Attitude');
 
 subplot(3, 1, 2)
 hold on;
-plot(time, rad2deg*ins_data(11,:), 'Color', 'blue', 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, rad2deg*ins_data(11,:), 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Pitch angle [deg]')
 legend('Est', 'True');
 
 subplot(3, 1, 3)
 hold on;
-plot(time, rad2deg*ins_data(12,:), 'Color', 'blue', 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, rad2deg*ins_data(12,:), 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, rad2deg*att_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 xlabel('Time [s]');
 ylabel('yaw angle [deg]')
 legend('Est', 'True');
