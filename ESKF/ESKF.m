@@ -8,7 +8,7 @@ rad2deg = 180/pi;
 Z3 = zeros(3,3);
 I3 = eye(3);
 
-simtime = 240;
+simtime = 180;
 f_samp  = 100;          %imu frequency
 f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time

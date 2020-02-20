@@ -23,12 +23,12 @@ y = zeros(6,1);
 phi_0 = deg2rad*45;
 theta_0 = deg2rad*45;
 psi_0 = deg2rad*45;
-q_ins_0 = euler2q(phi_0,theta_0,psi_0); % q = [eta eps1 eps2 eps3]
+q_ins = euler2q(phi_0,theta_0,psi_0); % q = [eta eps1 eps2 eps3]
 
 % init rotation matrix
 %[~, R_nb, Tt] = eulerang(phi_0, theta_0, psi_0);
-R_nb = Rquat(q_ins_0);
-Tt = Tquat(q_ins_0);
+R_nb = Rquat(q_ins);
+Tt = Tquat(q_ins);
 
 std_pos = 2;
 std_att = 5 * deg2rad;
@@ -58,14 +58,22 @@ for i = 2:N
    time_data(i) = t;
    ins_data(:,i) = x_ins;
 
-   [phi, theta, psi] = q2euler(q_ins/norm(q_ins)); 
-   ins_data(7:9, i) = [phi theta psi]'; %for plotting
+   [phi_ins, theta_ins, psi_ins] = q2euler(q_ins/norm(q_ins)); 
+   ins_data(7:9, i) = [phi_ins theta_ins psi_ins]'; %for plotting
    
-   phi_ins     = x_ins(7);
-   theta_ins   = x_ins(8);
-   psi_ins     = x_ins(9);
+%    phi_ins     = x_ins(7);
+%    theta_ins   = x_ins(8);
+%    psi_ins     = x_ins(9);
     
-   [J_ins, R_nb_ins, Tt_ins] = eulerang(phi_ins, theta_ins, psi_ins);
+
+    eps_ins = x_ins(10:12);    
+    q_ins = unitquat(eps_ins);
+    q_ins = q_ins/norm(q_ins); % normalization to avoid numerical erro
+
+%    [J_ins, R_nb_ins, Tt_ins] = eulerang(phi_ins, theta_ins, psi_ins);
+
+   R_nb_ins = Rquat(q_ins);
+   Tt_ins = Tquat(q_ins);
    
    count = count + 1;
 
@@ -85,13 +93,31 @@ for i = 2:N
    end
    
    a_n_ins = R_nb_ins*f_b_imu;
-    
-   x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * a_n_ins);
-   x_ins(4:6) = x_ins(4:6) +  (h * a_n_ins);
-   x_ins(7:9) = x_ins(7:9);
-   x_ins(10:12) = x_ins(10:12) + (h * w_b_imu);
-   x_ins(13:15) = x_ins(13:15); 
    
+   % from Sola kinematics
+   
+   
+    p_n_ins = x_ins(1:3);
+    v_n_ins = x_ins(4:6);
+    acc_bias_ins = x_ins(7:9);
+    eps_ins = x_ins(10:12);
+    ars_bias_ins = (12:15);
+    
+    p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
+    v_n_ins = v_n_ins + (h * a_n_ins);
+    acc_bias_ins = acc_bias_ins;
+    q_ins = q_ins + quatprod(q_ins', [0 ; w_b_imu]);
+    ars_bias_ins = ars_bias_ins; 
+    
+    x_ins = [p_n_ins ; v_n_ins ; acc_bias_ins ; q_ins(2:4) ; ars_bias_ins];
+
+    
+%     x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * a_n_ins);
+%     x_ins(4:6) = x_ins(4:6) +  (h * a_n_ins);
+%     x_ins(7:9) = x_ins(7:9);
+%     x_ins(10:12) = x_ins(10:12) + (h * w_b_imu);
+%     x_ins(13:15) = x_ins(13:15); 
+    
 end
 
 
