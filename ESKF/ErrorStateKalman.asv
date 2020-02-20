@@ -1,4 +1,4 @@
-function delta_x = ErrorStateKalman(delta_y, R_nb, Tt, f_low, init)
+function delta_x = ErrorStateKalman(delta_y, R_nb, Tt, init)
     deg2rad = pi/180;   
     
     Z3 = zeros(3,3);
@@ -33,10 +33,10 @@ function delta_x = ErrorStateKalman(delta_y, R_nb, Tt, f_low, init)
         delta_x = 0;
     else
             % Error model
-        A =    [Z3 I3       Z3 Z3       Z3 
-                Z3 Z3 -R_nb*I3 Z3       Z3
-                Z3 Z3 -I3/Tacc Z3       Z3
-                Z3 Z3       Z3 Z3   -Tt*I3
+        A =    [Z3 I3       Z3 Z3 Z3 
+                Z3 Z3 -R_nb*I3 Z3 Z3
+                Z3 Z3 -I3/Tacc Z3 Z3
+                Z3 Z3       Z3 Z3 -Tt
                 Z3 Z3       Z3 Z3 -I3/Tars];
 
         E =    [ Z3 Z3 Z3 Z3
@@ -46,11 +46,10 @@ function delta_x = ErrorStateKalman(delta_y, R_nb, Tt, f_low, init)
                  Z3 Z3 Z3 I3];
 
         C = [I3 Z3 Z3 Z3 Z3
-             Z3 Z3 Z3 I3 Z3];
+            Z3 Z3 Z3 I3 Z3];
 
         % Discrete-time model
-        h = 1/f_low;
-        [Ad, Ed] = c2d(A, E, h);
+        [Ad, Ed] = c2d(A, E, 0.1);
 
         % KF gain
         K = P_hat * C' / (C * P_hat * C' + R);

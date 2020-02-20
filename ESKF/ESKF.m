@@ -10,10 +10,11 @@ I3 = eye(3);
 
 simtime = 240;
 f_samp  = 100;          %imu frequency
+f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time
 N       = simtime/h;    %number of iterations
 
-%init values
+% init values
 delta_x = zeros(15, 1);
 x_ins = zeros(15, 1);
 y = zeros(6,1);
@@ -22,15 +23,15 @@ std_pos = 2;
 std_att = 5 * deg2rad;
 
 %initialization of kalman filter
-ErrorStateKalman(0, 0, 0, 1);
+ErrorStateKalman(0, 0, 0, f_low, 1);
 
 % data storage
 time_data = zeros(1, N);
 ins_data = zeros(15, N);
 
 % from sim
-%[p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = CircleSim(simtime,f_samp,0);
-[p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = CircleSim(simtime,f_samp,0);
+% [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 
 % matrices
@@ -64,7 +65,7 @@ for i = 2:N
         y_ins = C_ins * x_ins;
         delta_y = y - y_ins;
         
-        delta_x = ErrorStateKalman(delta_y, R_nb_ins, Tt_ins, 0);
+        delta_x = ErrorStateKalman(delta_y, R_nb_ins, Tt_ins, f_low, 0);
         x_ins = x_ins + delta_x;
         
    end
