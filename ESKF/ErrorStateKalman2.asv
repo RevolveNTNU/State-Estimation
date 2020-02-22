@@ -30,13 +30,13 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_
       
 %        P_hat = diag([1e-6 * ones(1, 3) 1e-4 * ones(1, 3) 1e-4 * ones(1, 3) 1e-3 * ones(1, 3) 1e-3 * ones(1, 3)]);  % Initial error covariance
 
-%         P_hat = diag([ 1e-1 1e-1 1e-1 ...
-%                        1e-2 1e-2 1e-2 ...
-%                        5e-2 5e-2 5e-2 ...
-%                        1e-10 1e-10 1e-10 ...
-%                        1e-6 1e-6 1e-6]); 
+        P_hat = diag([ 1e-1 1e-1 1e-1 ...
+                       1e-2 1e-2 1e-2 ...
+                       5e-2 5e-2 5e-2 ...
+                       1e-10 1e-10 1e-10 ...
+                       1e-6 1e-6 1e-6]); 
                    
-       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
+       P_hat = diag([1e-6 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-3 * ones(1, 3) 1e-3 * ones(1, 3)]);  % Initial error covariance
 
         delta_x = 0;
     else
@@ -69,17 +69,13 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_
                   Z3 Z3 I3 Z3    % w_ars
                   Z3 Z3 Z3 I3];  % w_ars_bias
                
-          C = [I3 Z3 Z3 Z3 Z3
-               Z3 Z3 Z3 I3 Z3];
+        C = [I3 Z3 Z3 Z3 Z3
+             Z3 Z3 Z3 I3 Z3];
                 
 
         % Discrete-time model
         h = 1/f_low;
         [Ad, Ed] = c2d(A, E, h);
-        
-        %disp(P_hat)
-        %disp(C)
-        disp(R)
 
         % KF gain
         K = P_hat * C' / (C * P_hat * C' + R);

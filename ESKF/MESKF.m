@@ -34,7 +34,9 @@ std_pos = 2;
 std_att = 5 * deg2rad;
 
 %initialization of kalman filter
-ErrorStateKalman(0, 0, 0, f_low, 1);
+f_b_imu_0 = [0 0 0];
+w_b_imu_0 = [0 0 0];
+ErrorStateKalman2(0, 0, 0, f_low, 1,f_b_imu_0 , w_b_imu_0);
 
 % data storage
 time_data = zeros(1, N);
@@ -59,6 +61,9 @@ for i = 2:N
    ins_data(:,i) = x_ins;
 
    [phi_ins, theta_ins, psi_ins] = q2euler(q_ins/norm(q_ins)); 
+   phi_ins = ssa(phi_ins, 'rad');
+   theta_ins = ssa(theta_ins, 'rad');
+   psi_ins = ssa(psi_ins, 'rad');
    ins_data(7:9, i) = [phi_ins theta_ins psi_ins]'; %for plotting
    
 %    phi_ins     = x_ins(7);
@@ -87,7 +92,7 @@ for i = 2:N
         y_ins = C_ins * x_ins;
         delta_y = y - y_ins;
         
-        delta_x = ErrorStateKalman(delta_y, R_nb_ins, Tt_ins, f_low, 0);
+        delta_x = ErrorStateKalman2(delta_y, R_nb_ins, Tt_ins, f_low, 0, f_b_imu, w_b_imu);
         x_ins = x_ins + delta_x;
         
    end
@@ -101,15 +106,15 @@ for i = 2:N
     v_n_ins = x_ins(4:6);
     acc_bias_ins = x_ins(7:9);
     eps_ins = x_ins(10:12);
-    ars_bias_ins = (12:15);
+    ars_bias_ins = x_ins(13:15);
     
     p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
     v_n_ins = v_n_ins + (h * a_n_ins);
     acc_bias_ins = acc_bias_ins;
-    q_ins = q_ins + quatprod(q_ins', [0 ; w_b_imu]);
+    q_ins = q_ins + 0.5 * quatprod(q_ins, [0 ; w_b_imu]); % egt (w_b_imu - ars_bias)
     ars_bias_ins = ars_bias_ins; 
     
-    x_ins = [p_n_ins ; v_n_ins ; acc_bias_ins ; q_ins(2:4) ; ars_bias_ins];
+    x_ins = [p_n_ins; v_n_ins; acc_bias_ins; q_ins(2:4); ars_bias_ins];
 
     
 %     x_ins(1:3) = x_ins(1:3) + (h * x_ins(4:6)) + (0.5 * h * h * a_n_ins);
