@@ -1,4 +1,4 @@
-function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_b_imu)
+function [delta_x, delta_q] = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_b_imu, q_ins)
     deg2rad = pi/180;   
     
     Z3 = zeros(3,3);
@@ -6,6 +6,11 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_
     
     Tacc = 200;
     Tars = 200;
+    
+    
+   a_g_param = 2;
+   a_g = a_g_param * q_ins(2:4) / q_ins(1);
+        
 
     persistent P_hat Q R
     if init
@@ -38,7 +43,9 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_
                    
        P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
 
-        delta_x = 0;
+       delta_x = 0;
+       delta_q = 0;
+       
     else
             % Error model
 %         A =    [Z3 I3       Z3 Z3       Z3 
@@ -57,16 +64,16 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_
 %              Z3 Z3 Z3 I3 Z3];
 
           A = [ Z3, I3, Z3, Z3, Z3 ;
-                Z3, Z3, R_nb, R_nb*Smtrx(f_b_imu), Z3 ;
-                Z3, Z3, I3/Tacc, Z3, Z3 ;
-                Z3, Z3, Z3, Smtrx(w_b_imu), I3 ;
-                Z3, Z3, Z3, Z3, I3/Tars] ;
+                Z3, Z3, -R_nb, -R_nb*Smtrx(f_b_imu), Z3 ;
+                Z3, Z3, -I3/Tacc, Z3, Z3 ;
+                Z3, Z3, Z3, -0.5*Smtrx(w_b_imu), -0.5*I3 ;
+                Z3, Z3, Z3, Z3, -I3/Tars] ;
             
  
           E = [   Z3 Z3 Z3 Z3
-                R_nb Z3 Z3 Z3    % w_acc
+                -R_nb Z3 Z3 Z3    % w_acc
                   Z3 I3 Z3 Z3    % w_acc_bias
-                  Z3 Z3 I3 Z3    % w_ars
+                  Z3 Z3 -I3 Z3    % w_ars
                   Z3 Z3 Z3 I3];  % w_ars_bias
                
           C = [I3 Z3 Z3 Z3 Z3
@@ -75,21 +82,25 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, Tt, f_low, init, f_b_imu, w_
 
         % Discrete-time model
         h = 1/f_low;
-        [Ad, Ed] = c2d(A, E, h);
-        
-        %disp(P_hat)
-        %disp(C)
-        disp(R)
+        %[Ad, Ed] = c2d(A, E, h);
+        Ad = eye(15) + h * A;
+        Ed = h * E;
 
         % KF gain
+        
         K = P_hat * C' / (C * P_hat * C' + R);
 
         % corrector 
         delta_x = K * delta_y;
         P_hat = (eye(15)-K*C) * P_hat * (eye(15) - K*C)' + K*R*K';
         P_hat = (P_hat + P_hat')/2;
+        
+        a_g_est = delta_x(10:12);
+        delta_q = 1 / sqrt(a_g_param^2 + a_g_est'*a_g_est) * [a_g_param a_g_est']';
+        %delta_x(10:12) = q_est(2:4);
 
         % Covariance predictor (k+1)
         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
+     
     end
 end
