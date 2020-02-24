@@ -8,7 +8,7 @@ rad2deg = 180/pi;
 Z3 = zeros(3,3);
 I3 = eye(3);
 
-simtime = 180;
+simtime = 300;
 f_samp  = 100;          %imu frequency
 f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time
@@ -34,6 +34,12 @@ ins_data = zeros(15, N);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 
+% init
+x_ins(1:3) = [5;6;7]; % for testing av ESKF
+x_ins(4:6) = [0;0;0]; % for testing av ESKF
+x_ins(10:12) = [deg2rad*13; -deg2rad*15; -deg2rad*42]; % for testing av ESKF
+% x_ins(4:6) = [v_abs;0;0]; % korrekt initialisering. For testing av INS
+
 % matrices
 C_ins = [I3 Z3 Z3 Z3 Z3
          Z3 Z3 Z3 I3 Z3];
@@ -41,7 +47,7 @@ C_ins = [I3 Z3 Z3 Z3 Z3
      
 count = 10;
 
-for k = 2:N
+for k = 1:N
    t = k * h;
    
    time_data(k) = t;
