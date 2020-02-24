@@ -1,8 +1,0 @@
-function q = unitquat(eps)
-%UNITQUAT computes the unit quaternion having the input epsilon ector 
-%   Detailed explanation goes 
-eta = sqrt(1- eps'*eps);
-q = [eta eps]';
-
-end
-

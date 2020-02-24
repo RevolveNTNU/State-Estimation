@@ -14,6 +14,16 @@ f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time
 N       = simtime/h;    %number of iterations
 
+acc_bias = 2*[-0.4 -0.5 0.3]';
+ars_bias = 10*[-0.03 0.02 -0.02]'; 
+
+
+% data storage
+time_data = zeros(1, N);
+ins_data = zeros(15, N); % [pos, vel, bacc, att, bars]
+true_data = zeros(9, N); % [pos, vel, att]
+meas_data = zeros(9, N); % [pos, vel, att] 
+
 % init values
 delta_x = zeros(15, 1);
 x_ins = zeros(15, 1);
@@ -38,14 +48,12 @@ f_b_imu_0 = [0 0 0];
 w_b_imu_0 = [0 0 0];
 ErrorStateKalman2(0, 0, 0, f_low, 1,f_b_imu_0 , w_b_imu_0, q_ins);
 
-% data storage
-time_data = zeros(1, N);
-ins_data = zeros(15, N);
-
 % from sim
 [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = CircleSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
+% [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StepSim(simtime,f_samp,0);
 
+true_data = [p_n_nb ; v_n_nb ; att_n_nb];
 
 % matrices
 C_ins = [I3 Z3 Z3 Z3 Z3
@@ -57,8 +65,13 @@ count = 10;
 for i = 2:N
    t = i * h;
    
+   acc_bias = acc_bias + 0.001 * wgn(3,1,1);
+   ars_bias = ars_bias + 0.00005 * wgn(3,1,1);
+   
    time_data(i) = t;
    ins_data(:,i) = x_ins;
+   meas_data(:,i) = true_data(:,i) + [std_pos * randn(1) * ones(1,3) 0 0 0 std_att * randn(1) * ones(1,3)]';
+   
 
    [phi_ins, theta_ins, psi_ins] = q2euler(q_ins/norm(q_ins)); 
 %    phi_ins = ssa(phi_ins, 'rad');
@@ -80,7 +93,7 @@ for i = 2:N
     q_ins = unitquat(eps_ins);
     q_ins = q_ins/norm(q_ins); % normalization to avoid numerical erro
 
-   [J_ins, R_nb_ins, Tt_ins] = eulerang(phi_ins, theta_ins, psi_ins);
+   %[J_ins, R_nb_ins, Tt_ins] = eulerang(phi_ins, theta_ins, psi_ins);
 
    R_nb_ins = Rquat(q_ins);
    Tt_ins = Tquat(q_ins);
@@ -140,76 +153,85 @@ figure(1)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time_data, ins_data(1,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time_data, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(1,:) , '--', 'Color', 'blue', 'Linewidth', 2);
+plot(time_data,  meas_data(1,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, true_data(1,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('X position [m]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 title('Position');
 
 subplot(3, 1, 2)
 hold on;
-plot(time_data, ins_data(2,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time_data, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(2,:), '--','Color', 'blue', 'Linewidth', 2);
+plot(time_data,  meas_data(2,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, true_data(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y position [m]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 
 subplot(3, 1, 3)
 hold on;
-plot(time_data, ins_data(3,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time_data, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(3,:), '--','Color', 'blue', 'Linewidth', 2);
+plot(time_data, meas_data(3,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, true_data(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z position [m]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 
 % VELOCITIES
 figure(2)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time_data, ins_data(4,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time_data, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(4,:),'--','Color', 'blue', 'Linewidth', 2);
+plot(time_data, meas_data(4,:),'Color', [255/255, 165/255, 0]);
+plot(time_data, true_data(4,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('X velocity [m]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 title('Velocity');
 
 subplot(3, 1, 2)
 hold on;
-plot(time_data, ins_data(5,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time_data, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(5,:), '--', 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, meas_data(5,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, true_data(5,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y velocity [m]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 
 subplot(3, 1, 3)
 hold on;
-plot(time_data, ins_data(6,:) ,'Color', 'blue', 'Linewidth', 2);
-plot(time_data, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, ins_data(6,:) , '--', 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, meas_data(6,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, true_data(6,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z velocity [m]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 
 % ATTITUDE 
 figure(3)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time_data, rad2deg*ins_data(10,:),'Color', 'blue', 'Linewidth', 2);
-plot(time_data, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, rad2deg*ins_data(10,:), '--', 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, rad2deg*meas_data(7,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, rad2deg*true_data(7,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('Roll angle [deg]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 title('Attitude');
 
 subplot(3, 1, 2)
 hold on;
-plot(time_data, rad2deg*ins_data(11,:), 'Color', 'blue', 'Linewidth', 2);
-plot(time_data, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, rad2deg*ins_data(11,:), '--', 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, rad2deg*meas_data(8,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, rad2deg*true_data(8,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('Pitch angle [deg]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 
 subplot(3, 1, 3)
 hold on;
-plot(time_data, rad2deg*ins_data(12,:), 'Color', 'blue', 'Linewidth', 2);
-plot(time_data, rad2deg*att_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time_data, rad2deg*ins_data(12,:), '--', 'Color', 'blue', 'Linewidth', 2);
+plot(time_data, rad2deg*meas_data(9,:), 'Color', [255/255, 165/255, 0]);
+plot(time_data, rad2deg*true_data(9,:), 'Color', 'black', 'Linewidth', 1.5);
 xlabel('Time [s]');
 ylabel('yaw angle [deg]')
-legend('Est', 'True');
+legend('Est', 'Measured', 'True');
 
 % Position map
 figure(4)
