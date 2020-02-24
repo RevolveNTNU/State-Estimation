@@ -38,7 +38,7 @@ a_b_nb = [0 (v_abs^2)/R 0]';
 g_b_n = [0 0 g]';
 
 
-for k = 1:N
+for i = 1:N
     
     time(k) = t;
     p_n_nb_data(:,k) = p_n_nb;
@@ -51,13 +51,13 @@ for k = 1:N
 
     [J,R_nb,T_nb] = eulerang(phi, theta, psi);
 
-    f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_b_n; 
+    f_b_imu = a_b_nb + Smtrx(w_b_nb)*v_b_nb - (R_nb')*g_b_n; 
     omega_b_imu = omega_b_nb;
     
     f_b_imu_data(:,k) = f_b_imu;
     omega_b_imu_data(:,k) = omega_b_imu;
     
-    a_b_nb = f_b_imu + g_b_n;
+    a_b_nb = f_b_im + g_b_n;
     p_n_nb = p_n_nb + (h * v_n_nb) + (0.5 * h * h * a_b_nb);
     v_n_nb = v_n_nb + (h * R_nb * a_b_nb);
     att_n_nb = att_n_nb + (h * omega_b_imu);
