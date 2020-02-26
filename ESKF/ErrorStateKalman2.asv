@@ -68,7 +68,7 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, f_low, init, a_n_ins, omega_
           Ad = [ I3  I3*h        Z3                     Z3         Z3    % dp
                  Z3    I3   -R_nb*h      -Smtrx(a_n_ins)*h         Z3    % dv
                  Z3    Z3  -I3/Tacc                     Z3         Z3    % dbacc
-                 Z3    Z3        Z3  -Smtrx(omega_b_ins)*h      -I3*h    % dtheta ???????
+                 Z3    Z3        Z3  -Smtrx(omega_b_ins)*h      -I3*h    % dtheta
                  Z3    Z3        Z3                      Z3  -I3/Tars] ; % dbars
             
  
