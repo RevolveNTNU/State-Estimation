@@ -60,14 +60,7 @@ for k = 1:N
    t = k * h;
    time_data(k) = t;
    
-%    ins_data(:,k) = x_ins;
-
-%    phi_ins     = x_ins(10);
-%    theta_ins   = x_ins(11);
-%    psi_ins     = x_ins(12);
-%     
-%    [J_ins, R_nb_ins, Tt_ins] = eulerang(phi_ins, theta_ins, psi_ins);
-%    
+   % split state vector
    p_n_ins = x_ins(1:3);
    v_n_ins = x_ins(4:6);
    bacc_b_ins = x_ins(7:9);
@@ -75,24 +68,28 @@ for k = 1:N
    q_ins = q_ins/norm(q_ins);
    bars_b_ins = x_ins(14:16);
    
+   % compute rotation vector
    R_nb_ins = Rquat(q_ins);
    
+   % store current state 
    [phi_ins, theta_ins, psi_ins] = q2euler(q_ins);
    ins_data(:,k) = [p_n_ins ; v_n_ins ; bacc_b_ins ; [phi_ins theta_ins psi_ins]' ; bars_b_ins]; 
    
+   % compute acceleration and angular rate
    a_n_ins = R_nb_ins*(f_b_imu(:,k) - bacc_b_ins) + g_b_n;
    omega_b_ins = omega_b_imu(:,k) - bars_b_ins;
    
+   % compute quaternion from angular rates 
    alpha1 = omega_b_ins(1)*h;
    alpha2 = omega_b_ins(2)*h;
    alpha3 = omega_b_ins(3)*h;
    
 %    q_omega = [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'] + [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]'] + [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]'];  
-   
    q_omega = quatprod( [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'], [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]']);
    q_omega = quatprod( q_omega, [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]']);
    q_omega = q_omega/norm(q_omega);
    
+   % update nominal states with imu input
    p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
    v_n_ins = v_n_ins +  (h * a_n_ins);
    bacc_b_ins = bacc_b_ins;
@@ -117,23 +114,25 @@ for k = 1:N
         
         delta_y = y - y_ins;
         
+        % compute error state with ESKF
         delta_x = ErrorStateKalman2(delta_y, R_nb_ins, f_low, 0, a_n_ins, omega_b_ins, g_b_n);
+        
+        % add error to nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
         
+        % multiplicative part
         alpha1 = delta_x(10);
         alpha2 = delta_x(11);
         alpha3 = delta_x(12);
-
 %         q_omega = [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'] + [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]'] + [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]'];  
         q_omega = quatprod( [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'], [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]']);
         q_omega = quatprod( q_omega, [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]']);
         q_omega = q_omega/norm(q_omega);
    
-        %delta_q = euler2q(delta_x(10), delta_x(11), delta_x(12));
-        
-        delta_q = [1 ; 0.5 * delta_x(10:12)];
-        delta_q = delta_q / norm(delta_q);
+%         delta_q = euler2q(delta_x(10), delta_x(11), delta_x(12));
+%         delta_q = [1 ; 0.5 * delta_x(10:12)];
+%         delta_q = delta_q / norm(delta_q);
         
         x_ins(10:13) = quatprod(x_ins(10:13), q_omega);
         x_ins(10:13) = x_ins(10:13)/norm(x_ins(10:13)); 
