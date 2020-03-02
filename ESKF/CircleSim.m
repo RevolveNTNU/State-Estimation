@@ -61,6 +61,7 @@ for k = 1:N
     p_n_nb = p_n_nb + (h * v_n_nb) + (0.5 * h * h * a_b_nb);
     v_n_nb = v_n_nb + (h * R_nb * a_b_nb);
     att_n_nb = att_n_nb + (h * omega_b_imu);
+    att_n_nb = ssa(att_n_nb,'rad'); 
 
     t = t + h;
 
