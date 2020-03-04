@@ -1,4 +1,4 @@
-function [p_n_nb_data,v_n_nb_data,q_nb_data,f_b_imu_data, omega_b_imu_data,time, g_b_n, v_abs] = CircleSim(simtime ,frequency, enable_plots)
+function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_b_n, v_abs] = CircleSim(simtime ,frequency, enable_plots)
 %CIRCLESIM Summary of this function goes here
 %   Radius = 50 [m]
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
@@ -21,6 +21,8 @@ p_n_nb_data = zeros(3, N);
 v_n_nb_data = zeros(3, N);
 % att_n_nb_data = zeros(3, N);
 q_nb_data = zeros(4,N); 
+bacc_b_nb_data = zeros(3, N);
+bars_b_nb_data = zeros(3, N);
 f_b_imu_data = zeros(3,N);
 omega_b_imu_data = zeros(3,N);
 
@@ -32,6 +34,11 @@ p_n_nb = [0 0 0]';
 v_n_nb = [v_abs 0 0]';
 % att_n_nb = [0 0 0]';
 q_nb = [1 0 0 0]';
+
+acc_bias = 2*[-0.4 -0.5 0.3]';
+ars_bias = 10*[-.030 0.02 -.02]';
+bacc_b_nb = acc_bias;
+bars_b_nb = ars_bias;
 
 
 v_b_nb = [0 0 0]';
@@ -47,6 +54,8 @@ for k = 1:N
     v_n_nb_data(:,k) = v_n_nb;
 %     att_n_nb_data(:,k) = att_n_nb;
     q_nb_data(:,k) = q_nb;
+    bacc_b_nb_data(:,k) = bacc_b_nb;
+    bars_b_nb_data(:,k) = bars_b_nb;
     
 %     phi = att_n_nb_data(1,k);
 %     theta = att_n_nb_data(2,k);
@@ -54,7 +63,7 @@ for k = 1:N
 
 %     [J,R_nb,T_nb] = eulerang(phi, theta, psi);
 
-    [R_nb, T_nb] = quatern(q_nb_data(:,k))
+    [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
 
     f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_b_n; 
     omega_b_imu = omega_b_nb;
@@ -69,6 +78,8 @@ for k = 1:N
 %     att_n_nb = att_n_nb + (h * omega_b_imu);
 %     att_n_nb = ssa(att_n_nb,'rad'); 
     q_nb = quatprod(q_nb,q_omega);
+    bacc_b_nb = acc_bias + 0.001 * wgn(3, 1, 1);
+    bars_b_nb = ars_bias + 0.00005 * wgn(3, 1, 1);
 
     t = t + h;
 

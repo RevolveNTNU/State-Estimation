@@ -36,7 +36,7 @@ ins_data = zeros(15, N);
 att_n_nb = zeros(3, N);
 
 % from sim
-[p_n_nb, v_n_nb, q_nb, f_b_imu, omega_b_imu,time, g_b_n, v_abs] = CircleSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_b_n, v_abs] = CircleSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 %initialization of kalman filter
@@ -208,8 +208,36 @@ ylabel('Z velocity [m]')
 legend('Est', 'True');
 grid on;
 
-% ATTITUDE 
+% ACCEL BIAS
 figure(3)
+figure(gcf);
+subplot(3, 1, 1)
+hold on;
+plot(time, ins_data(7,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, bacc_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('X acc bias [deg]')
+legend('Est', 'True');
+title('Gyro bias');
+grid on;
+
+subplot(3, 1, 2)
+hold on;
+plot(time, ins_data(8,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, bacc_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('Y acc bias [deg]')
+legend('Est', 'True');
+grid on;
+
+subplot(3, 1, 3)
+hold on;
+plot(time, ins_data(9,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('Z acc bias [deg]')
+legend('Est', 'True');
+grid on;
+
+% ATTITUDE 
+figure(4)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
@@ -237,8 +265,36 @@ ylabel('yaw angle [deg]')
 legend('Est', 'True');
 grid on;
 
+% GYRO BIAS
+figure(5)
+figure(gcf);
+subplot(3, 1, 1)
+hold on;
+plot(time, ins_data(13,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, bars_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('Roll bias [deg]')
+legend('Est', 'True');
+title('Gyro bias');
+grid on;
+
+subplot(3, 1, 2)
+hold on;
+plot(time, ins_data(14,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, bars_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('Pitch bias [deg]')
+legend('Est', 'True');
+grid on;
+
+subplot(3, 1, 3)
+hold on;
+plot(time, ins_data(15,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('Yaw bias [deg]')
+legend('Est', 'True');
+grid on;
+
 % Position map
-figure(4)
+figure(6)
 figure(gcf)
 subplot(1, 1, 1)
 plot(ins_data(2,:), ins_data(1,:), 'Color', 'black', 'Linewidth', 1.5);

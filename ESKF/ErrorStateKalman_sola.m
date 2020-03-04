@@ -71,20 +71,20 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, f_low, init, a_n_ins, omega_
           R_omega = Rzyx(phi, theta, psi);
 
             
-          Ad = [ I3  I3*h        Z3                         Z3       Z3    Z3    % dp
-                 Z3    I3   -R_nb*h  -Smtrx(a_n_ins - g_b_n)*h       Z3  I3*h    % dv
-                 Z3    Z3        I3                         Z3       Z3    Z3    % dbacc
-                 Z3    Z3        Z3                    R_omega  -R_nb*h    Z3    % dtheta ???????
-                 Z3    Z3        Z3                         Z3       I3    Z3    % dbars
-                 Z3    Z3        Z3                         Z3       Z3    I3] ; % dg
+          Ad = [ I3  I3*h        Z3                                   Z3       Z3    Z3    % dp
+                 Z3    I3   -R_nb*h  -Smtrx(a_n_ins - (R_nb') * g_b_n)*h       Z3  I3*h    % dv
+                 Z3    Z3        I3                                   Z3       Z3    Z3    % dbacc
+                 Z3    Z3        Z3                              R_omega  -R_nb*h    Z3    % dtheta ???????
+                 Z3    Z3        Z3                                   Z3       I3    Z3    % dbars
+                 Z3    Z3        Z3                                   Z3       Z3    I3] ; % dg
             
  
-          Ed = [     Z3   Z3    Z3   Z3
-                   h*I3   Z3    Z3   Z3    % w_acc
-                     Z3 h*I3    Z3   Z3    % w_acc_bias
-                     Z3   Z3  h*I3   Z3    % w_ars
-                     Z3   Z3    Z3 h*I3    % w_ars_bias
-                     Z3   Z3    Z3   Z3 ]; 
+          Ed = [     Z3      Z3    Z3   Z3
+                -h*R_nb      Z3    Z3   Z3    % w_acc
+                     Z3 -h*R_nb    Z3   Z3    % w_acc_bias
+                     Z3      Z3  h*I3   Z3    % w_ars
+                     Z3      Z3    Z3 h*I3    % w_ars_bias
+                     Z3      Z3    Z3   Z3 ]; 
                
           C = [I3 Z3 Z3 Z3 Z3 Z3
                Z3 Z3 Z3 I3 Z3 Z3 ];
