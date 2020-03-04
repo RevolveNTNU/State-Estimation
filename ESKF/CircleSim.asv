@@ -54,7 +54,7 @@ for k = 1:N
 
 %     [J,R_nb,T_nb] = eulerang(phi, theta, psi);
 
-    [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
+    [R_nb, T_nb] = quatern(q_nb_data(:,k))
 
     f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_b_n; 
     omega_b_imu = omega_b_nb;
