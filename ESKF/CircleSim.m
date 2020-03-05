@@ -35,8 +35,8 @@ v_n_nb = [v_abs 0 0]';
 % att_n_nb = [0 0 0]';
 q_nb = [1 0 0 0]';
 
-acc_bias = 0.01*[-0.4 -0.5 0.3]';
-ars_bias = 0.01*[-.030 0.02 -.02]';
+acc_bias = 0.001*[-0.4 -0.5 0.3]';
+ars_bias = 0.001*[-.030 0.02 -.02]';
 bacc_b_nb = acc_bias;
 bars_b_nb = ars_bias;
 
