@@ -26,8 +26,8 @@ phi_ins = 0;
 theta_ins = 0;
 psi_ins = 0;
 
-q_ins = euler2q(phi_ins,theta_ins,psi_ins);
-q_ins = q_ins/norm(q_ins);
+q_b_ins = euler2q(phi_ins,theta_ins,psi_ins);
+q_b_ins = q_b_ins/norm(q_b_ins);
 
 
 % data storage
@@ -36,13 +36,15 @@ ins_data = zeros(15, N);
 att_n_nb = zeros(3, N);
 
 % from sim
-[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_b_n, v_abs] = CircleSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 %initialization of kalman filter
 f_b_imu_0 = [0 0 0]';
 omega_b_imu_0 = [0 0 0]';
-ErrorStateKalman_sola(0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_b_n);
+bacc_b_ins = [0 0 0]';
+bars_b_ins = [0 0 0]';
+ErrorStateKalman_sola(0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -65,21 +67,23 @@ for k = 1:N
    p_n_ins = x_ins(1:3);
    v_n_ins = x_ins(4:6);
    bacc_b_ins = x_ins(7:9);
-   q_ins = x_ins(10:13);
-   q_ins = q_ins/norm(q_ins);
+   q_b_ins = x_ins(10:13);
+   q_b_ins = q_b_ins/norm(q_b_ins);
    bars_b_ins = x_ins(14:16);
    
    % compute rotation vector
-   R_nb_ins = Rquat(q_ins);
+   R_nb_ins = Rquat(q_b_ins);
    
    % store current state 
-   [phi_ins, theta_ins, psi_ins] = q2euler(q_ins);
-   ins_data(:,k) = [p_n_ins ; v_n_ins ; bacc_b_ins ; [phi_ins theta_ins psi_ins]' ; bars_b_ins]; 
+   [phi_ins, theta_ins, psi_ins] = q2euler(q_b_ins);
+   att_n_ins = [phi_ins, theta_ins, psi_ins]';
+   ins_data(:,k) = [p_n_ins ; v_n_ins ; bacc_b_ins ; att_n_ins ; bars_b_ins]; 
    
-   att_n_nb(1:3,k) = q2euler(q_nb(:,k));
+   [phi_t,theta_t,psi_t] = q2euler(q_nb(:,k));
+   att_n_nb(1:3,k) = [phi_t theta_t psi_t]';
    
    % compute acceleration and angular rate
-   a_n_ins = R_nb_ins*(f_b_imu(:,k) - bacc_b_ins) + g_b_n;
+   a_n_ins = R_nb_ins*(f_b_imu(:,k) - bacc_b_ins) + g_n_nb;
    omega_b_ins = omega_b_imu(:,k) - bars_b_ins;
    
    % compute quaternion from angular rates 
@@ -98,11 +102,11 @@ for k = 1:N
    p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
    v_n_ins = v_n_ins +  (h * a_n_ins);
    bacc_b_ins = bacc_b_ins;
-   q_ins = quatprod(q_ins, q_omega_b_ins); %quatprod(q_ins, [0 ; omega_b_ins]);
-   q_ins = q_ins/norm(q_ins);
+   q_b_ins = quatprod(q_b_ins, q_omega_b_ins); %quatprod(q_ins, [0 ; omega_b_ins]);
+   q_b_ins = q_b_ins/norm(q_b_ins);
    bars_b_ins = bars_b_ins;
    
-   x_ins = [p_n_ins ; v_n_ins ; bacc_b_ins ; q_ins ; bars_b_ins];
+   x_ins = [p_n_ins ; v_n_ins ; bacc_b_ins ; q_b_ins ; bars_b_ins];
    
    count = count + 1;
 
@@ -114,13 +118,13 @@ for k = 1:N
         y(4:6) = att_n_nb(1:3,k); % + (std_pos * randn(1) * ones(1, 3))';
         
 %         y_ins = [x_ins(1:3) ; x_ins(11:13)]
-        [phi_ins, theta_ins, psi_ins] = q2euler(q_ins);
+        [phi_ins, theta_ins, psi_ins] = q2euler(q_b_ins);
         y_ins = [ p_n_ins ; [phi_ins, theta_ins, psi_ins]'];
         
         delta_y = y - y_ins;
         
         % compute error state with ESKF
-        delta_x = ErrorStateKalman_sola(delta_y, R_nb_ins, f_low, 0, a_n_ins, omega_b_ins, g_b_n);
+        delta_x = ErrorStateKalman_sola(delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
         
         % add error to nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
@@ -217,7 +221,7 @@ plot(time, ins_data(7,:) ,'Color', 'blue', 'Linewidth', 2);
 plot(time, bacc_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('X acc bias [deg]')
 legend('Est', 'True');
-title('Gyro bias');
+title('Accelerometer bias');
 grid on;
 
 subplot(3, 1, 2)

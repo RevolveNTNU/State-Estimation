@@ -1,4 +1,4 @@
-function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_b_n, v_abs] = CircleSim(simtime ,frequency, enable_plots)
+function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs] = CircleSim(simtime ,frequency, enable_plots)
 %CIRCLESIM Summary of this function goes here
 %   Radius = 50 [m]
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
@@ -35,8 +35,8 @@ v_n_nb = [v_abs 0 0]';
 % att_n_nb = [0 0 0]';
 q_nb = [1 0 0 0]';
 
-acc_bias = 2*[-0.4 -0.5 0.3]';
-ars_bias = 10*[-.030 0.02 -.02]';
+acc_bias = 0.001*[-0.4 -0.5 0.3]';
+ars_bias = 0.001*[-.030 0.02 -.02]';
 bacc_b_nb = acc_bias;
 bars_b_nb = ars_bias;
 
@@ -44,7 +44,7 @@ bars_b_nb = ars_bias;
 v_b_nb = [0 0 0]';
 omega_b_nb = [0 0 pi/15]';
 a_b_nb = [0 (v_abs^2)/R 0]';
-g_b_n = [0 0 g]';
+g_n_nb = [0 0 g]';
 
 
 for k = 1:N
@@ -65,15 +65,15 @@ for k = 1:N
 
     [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
 
-    f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_b_n; 
-    omega_b_imu = omega_b_nb;
-    q_omega = qbuild(omega_b_imu,h);
+    f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_n_nb + bacc_b_nb; 
+    omega_b_imu = omega_b_nb + bars_b_nb;
+    q_omega = qbuild((omega_b_imu - bars_b_nb),h);
     
     f_b_imu_data(:,k) = f_b_imu;
     omega_b_imu_data(:,k) = omega_b_imu;
        
-    a_b_nb = f_b_imu + g_b_n;
-    p_n_nb = p_n_nb + (h * v_n_nb) + (0.5 * h * h * a_b_nb);
+    a_b_nb = f_b_imu - bacc_b_nb + (R_nb') * g_n_nb;
+    p_n_nb = p_n_nb + (h * v_n_nb) + (0.5 * h * h * R_nb * a_b_nb);
     v_n_nb = v_n_nb + (h * R_nb * a_b_nb);
 %     att_n_nb = att_n_nb + (h * omega_b_imu);
 %     att_n_nb = ssa(att_n_nb,'rad'); 
