@@ -71,12 +71,12 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, f_low, init, f_b_imu, omega_
           R_omega = Rzyx(phi, theta, psi);
 
             
-          Ad = [ I3  I3*h        Z3                                   Z3       Z3    Z3    % dp
-                 Z3    I3   -R_nb*h  -R_nb*Smtrx(f_b_imu - bacc_b_ins)*h       Z3  I3*h    % dv
-                 Z3    Z3        I3                                   Z3       Z3    Z3    % dbacc
-                 Z3    Z3        Z3                           (R_omega')    -I3*h    Z3    % dtheta ???????
-                 Z3    Z3        Z3                                   Z3       I3    Z3    % dbars
-                 Z3    Z3        Z3                                   Z3       Z3    I3] ; % dg
+          A = [  Z3    I3        Z3                                   Z3       Z3    Z3    % dp
+                 Z3    Z3     -R_nb    -R_nb*Smtrx(f_b_imu - bacc_b_ins)       Z3    I3    % dv
+                 Z3    Z3        Z3                                   Z3       Z3    Z3    % dbacc
+                 Z3    Z3        Z3                    ((R_omega')-I3)/h      -I3    Z3    % dtheta ???????
+                 Z3    Z3        Z3                                   Z3       Z3    Z3    % dbars
+                 Z3    Z3        Z3                                   Z3       Z3    Z3] ; % dg
             
  
           Ed = [     Z3      Z3    Z3   Z3
@@ -88,6 +88,8 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, f_low, init, f_b_imu, omega_
                
           C = [I3 Z3 Z3 Z3 Z3 Z3
                Z3 Z3 Z3 I3 Z3 Z3 ];
+           
+          Ad = eye(18) + h * A;
                 
 
         % Discrete-time model
@@ -104,10 +106,6 @@ function delta_x = ErrorStateKalman2(delta_y, R_nb, f_low, init, f_b_imu, omega_
         P_hat = (eye(18)-K*C) * P_hat * (eye(18) - K*C)' + K*R*K';
         P_hat = (P_hat + P_hat')/2;
         
-%        a_g_est = delta_x(10:12);
-%        delta_q = 1 / sqrt(a_g_param^2 + a_g_est'*a_g_est) * [a_g_param a_g_est']';
-        %delta_x(10:12) = q_est(2:4);
-
         % Covariance predictor (k+1)
         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
      

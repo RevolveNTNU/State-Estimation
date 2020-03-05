@@ -4,6 +4,7 @@ function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
 
 rad2deg = 180/pi;
+deg2rad = pi/180;
 
 h = 1/frequency;
 N = simtime/h;
@@ -35,10 +36,15 @@ v_n_nb = [v_abs 0 0]';
 % att_n_nb = [0 0 0]';
 q_nb = [1 0 0 0]';
 
-acc_bias = 0.001*[-0.4 -0.5 0.3]';
-ars_bias = 0.001*[-.030 0.02 -.02]';
+% Bias
+acc_bias = [-0.4 -0.5 0.3]';
+ars_bias = [-.030 0.02 -.02]';
 bacc_b_nb = acc_bias;
 bars_b_nb = ars_bias;
+
+% Standard dviations (for computation of noise)
+acc_std = 0.05;
+ars_std = deg2rad * 2; 
 
 
 v_b_nb = [0 0 0]';
@@ -54,8 +60,8 @@ for k = 1:N
     v_n_nb_data(:,k) = v_n_nb;
 %     att_n_nb_data(:,k) = att_n_nb;
     q_nb_data(:,k) = q_nb;
-    bacc_b_nb_data(:,k) = bacc_b_nb;
-    bars_b_nb_data(:,k) = bars_b_nb;
+    bacc_b_nb_data(:,k) = acc_bias;
+    bars_b_nb_data(:,k) = ars_bias;
     
 %     phi = att_n_nb_data(1,k);
 %     theta = att_n_nb_data(2,k);
@@ -64,15 +70,17 @@ for k = 1:N
 %     [J,R_nb,T_nb] = eulerang(phi, theta, psi);
 
     [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
+    acc_noise = acc_std * randn(3,1);
+    ars_noise = ars_std * randn(3,1);
 
-    f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_n_nb + bacc_b_nb; 
-    omega_b_imu = omega_b_nb + bars_b_nb;
-    q_omega = qbuild((omega_b_imu - bars_b_nb),h);
+    f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_n_nb + bacc_b_nb + acc_noise; 
+    omega_b_imu = omega_b_nb + bars_b_nb + ars_noise;
+    q_omega = qbuild((omega_b_imu - bars_b_nb - ars_noise),h);
     
     f_b_imu_data(:,k) = f_b_imu;
     omega_b_imu_data(:,k) = omega_b_imu;
        
-    a_b_nb = f_b_imu - bacc_b_nb + (R_nb') * g_n_nb;
+    a_b_nb = (f_b_imu - bacc_b_nb - acc_noise) + (R_nb') * g_n_nb;
     p_n_nb = p_n_nb + (h * v_n_nb) + (0.5 * h * h * R_nb * a_b_nb);
     v_n_nb = v_n_nb + (h * R_nb * a_b_nb);
 %     att_n_nb = att_n_nb + (h * omega_b_imu);
