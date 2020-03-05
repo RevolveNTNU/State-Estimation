@@ -161,7 +161,7 @@ figure(1)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ins_data(1,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(1,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('X position [m]')
 legend('Est', 'True');
@@ -170,7 +170,7 @@ grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ins_data(2,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(2,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y position [m]')
 legend('Est', 'True');
@@ -178,7 +178,7 @@ grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ins_data(3,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(3,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z position [m]')
 legend('Est', 'True');
@@ -189,7 +189,7 @@ figure(2)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ins_data(4,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(4,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('X velocity [m]')
 legend('Est', 'True');
@@ -198,7 +198,7 @@ grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ins_data(5,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(5,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y velocity [m]')
 legend('Est', 'True');
@@ -206,7 +206,7 @@ grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ins_data(6,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(6,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z velocity [m]')
 legend('Est', 'True');
@@ -217,7 +217,7 @@ figure(3)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ins_data(7,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(7,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bacc_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('X acc bias [deg]')
 legend('Est', 'True');
@@ -226,7 +226,7 @@ grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ins_data(8,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(8,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bacc_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Y acc bias [deg]')
 legend('Est', 'True');
@@ -234,7 +234,7 @@ grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ins_data(9,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(9,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z acc bias [deg]')
 legend('Est', 'True');
@@ -245,7 +245,7 @@ figure(4)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, rad2deg*ins_data(10,:),'Color', 'blue', 'Linewidth', 2);
+plot(time, rad2deg*ins_data(10,:),'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
 ylabel('Roll angle [deg]')
 legend('Est', 'True');
@@ -254,7 +254,7 @@ grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, rad2deg*ins_data(11,:), 'Color', 'blue', 'Linewidth', 2);
+plot(time, rad2deg*ins_data(11,:), 'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Pitch angle [deg]')
 legend('Est', 'True');
@@ -262,7 +262,7 @@ grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, rad2deg*ins_data(12,:), 'Color', 'blue', 'Linewidth', 2);
+plot(time, rad2deg*ins_data(12,:), 'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, rad2deg*att_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 xlabel('Time [s]');
 ylabel('yaw angle [deg]')
@@ -274,7 +274,7 @@ figure(5)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ins_data(13,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(13,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bars_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Roll bias [deg]')
 legend('Est', 'True');
@@ -283,7 +283,7 @@ grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ins_data(14,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(14,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bars_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Pitch bias [deg]')
 legend('Est', 'True');
@@ -291,7 +291,7 @@ grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ins_data(15,:) ,'Color', 'blue', 'Linewidth', 2);
+plot(time, ins_data(15,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Yaw bias [deg]')
 legend('Est', 'True');
