@@ -72,6 +72,8 @@ for k = 1:N
     [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
     acc_noise = acc_std * randn(3,1);
     ars_noise = ars_std * randn(3,1);
+    acc_noise = 0;
+    ars_noise = 0;
 
     f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_n_nb + bacc_b_nb + acc_noise; 
     omega_b_imu = omega_b_nb + bars_b_nb + ars_noise;

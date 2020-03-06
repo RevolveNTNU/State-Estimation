@@ -1,4 +1,4 @@
-clear all;
+clear;
 clc;
 close all;
 
@@ -298,8 +298,59 @@ ylabel('Yaw bias [deg]')
 legend('Est', 'True');
 grid on;
 
-% Position map
+% Accelerometer input
 figure(6)
+figure(gcf);
+subplot(3, 1, 1)
+hold on;
+plot(time, f_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('f_b_imu X [m/s^2]')
+legend('Measured');
+title('Accelerometer input');
+grid on;
+
+subplot(3, 1, 2)
+hold on;
+plot(time, f_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('f_b_imu y [m/s^2]')
+legend('Measured');
+grid on;
+
+subplot(3, 1, 3)
+hold on;
+plot(time, f_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('f_b_imu Z [m/s^2]')
+legend('Measured');
+grid on;
+
+
+% Gyrometer input
+figure(7)
+figure(gcf);
+subplot(3, 1, 1)
+hold on;
+plot(time, rad2deg*omega_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('omega_b_imu X [m/s^2]')
+legend('Measured');
+title('Gyrometer input');
+grid on;
+
+subplot(3, 1, 2)
+hold on;
+plot(time, rad2deg*omega_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('omega_b_imu y [m/s^2]')
+legend('Measured');
+grid on;
+
+subplot(3, 1, 3)
+hold on;
+plot(time, rad2deg*omega_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
+ylabel('omega_b_imu Z [m/s^2]')
+legend('Measured');
+grid on;
+
+% Position map
+figure(8)
 figure(gcf)
 subplot(1, 1, 1)
 plot(ins_data(2,:), ins_data(1,:), 'Color', 'black', 'Linewidth', 1.5);

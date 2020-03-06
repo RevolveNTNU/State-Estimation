@@ -23,18 +23,19 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
         R_att = std_att^2*I3;
         R = blkdiag(R_pos, R_att);
 
-        std_acc = 0.05;
+        std_acc = 0.03;
         Q_acc = std_acc^2*I3; 
-        std_acc_bias = 0.001;
+        std_acc_bias = 1;
         Q_acc_bias = std_acc_bias^2*I3;
 
         std_ars = 0.1;
         Q_ars = std_ars^2*I3;
-        std_ars_bias = 0.005;
+        std_ars_bias = 0.03;
         Q_ars_bias = std_ars_bias^2*I3;
 
-        Q = blkdiag( Q_acc, Q_acc_bias, Q_ars, Q_ars_bias ) * h * h;
+        Q1 = blkdiag( Q_acc, Q_acc_bias, Q_ars, Q_ars_bias ) * h^2;
         Q = diag([1e-5 * ones(1, 3) 1e-2 * ones(1, 3) 1e-4 * ones(1, 3) 1e-5 * ones(1, 3)]);
+        diff = Q1 - Q; 
       
 %        P_hat = diag([1e-6 * ones(1, 3) 1e-4 * ones(1, 3) 1e-4 * ones(1, 3) 1e-3 * ones(1, 3) 1e-3 * ones(1, 3)]);  % Initial error covariance
 
@@ -79,17 +80,18 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
                  Z3    Z3        Z3                                   Z3       Z3    Z3] ; % dg
             
  
-          Ed = [     Z3      Z3    Z3   Z3
-                 h*R_nb      Z3    Z3   Z3    % w_acc
-                     Z3    h*I3    Z3   Z3    % w_acc_bias
-                     Z3      Z3  h*I3   Z3    % w_ars
-                     Z3      Z3    Z3 h*I3    % w_ars_bias
+          E = [     Z3      Z3    Z3   Z3
+                   R_nb      Z3    Z3   Z3    % w_acc
+                     Z3      I3    Z3   Z3    % w_acc_bias
+                     Z3      Z3    I3   Z3    % w_ars
+                     Z3      Z3    Z3   I3    % w_ars_bias
                      Z3      Z3    Z3   Z3 ]; 
                
           C = [I3 Z3 Z3 Z3 Z3 Z3
                Z3 Z3 Z3 I3 Z3 Z3 ];
            
           Ad = eye(18) + h * A;
+          Ed = h * E;
                 
 
         % Discrete-time model
@@ -106,8 +108,12 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
         P_hat = (eye(18)-K*C) * P_hat * (eye(18) - K*C)' + K*R*K';
         P_hat = (P_hat + P_hat')/2;
         
+        Qd = 0.5 * (Ad * Ed_prev * Q * Ed_prev' * Ad' + Ed * Q * Ed') * h;
+%         disp(Ed * Q * Ed');
         % Covariance predictor (k+1)
+        %P_hat = Ad * P_hat * Ad' + Qd;
         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
+
      
     end
 end
