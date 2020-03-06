@@ -44,7 +44,8 @@ f_b_imu_0 = [0 0 0]';
 omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
-ErrorStateKalman_sola(0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
+Ed_prev = zeros(18,12);
+ErrorStateKalman_sola(Ed_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -124,7 +125,7 @@ for k = 1:N
         delta_y = y - y_ins;
         
         % compute error state with ESKF
-        delta_x = ErrorStateKalman_sola(delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
+        [delta_x, Ed_prev] = ErrorStateKalman_sola(Ed_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
         
         % add error to nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);

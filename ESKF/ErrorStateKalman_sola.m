@@ -1,4 +1,4 @@
-function delta_x = ErrorStateKalman2(delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
+function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
     deg2rad = pi/180;   
     
     Z3 = zeros(3,3);
