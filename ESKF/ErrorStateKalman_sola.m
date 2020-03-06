@@ -23,19 +23,18 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
         R_att = std_att^2*I3;
         R = blkdiag(R_pos, R_att);
 
-        std_acc = 0.03;
-        Q_acc = std_acc^2*I3; 
+        std_acc = 0.01 * sqrt(10);
+        Q_acc = std_acc * std_acc * I3; 
         std_acc_bias = 1;
-        Q_acc_bias = std_acc_bias^2*I3;
+        Q_acc_bias = std_acc_bias * std_acc_bias * I3;
 
         std_ars = 0.1;
-        Q_ars = std_ars^2*I3;
-        std_ars_bias = 0.03;
-        Q_ars_bias = std_ars_bias^2*I3;
+        Q_ars = std_ars * std_ars *I3;
+        std_ars_bias = 0.01 * sqrt(10);
+        Q_ars_bias = std_ars_bias * std_ars_bias * I3;
 
-        Q1 = blkdiag( Q_acc, Q_acc_bias, Q_ars, Q_ars_bias ) * h^2;
-        Q = diag([1e-5 * ones(1, 3) 1e-2 * ones(1, 3) 1e-4 * ones(1, 3) 1e-5 * ones(1, 3)]);
-        diff = Q1 - Q; 
+        Q = blkdiag( Q_acc, Q_acc_bias, Q_ars, Q_ars_bias ) * h * h;
+%         Q = diag([1e-5 * ones(1, 3) 1e-2 * ones(1, 3) 1e-4 * ones(1, 3) 1e-5 * ones(1, 3)]);
       
 %        P_hat = diag([1e-6 * ones(1, 3) 1e-4 * ones(1, 3) 1e-4 * ones(1, 3) 1e-3 * ones(1, 3) 1e-3 * ones(1, 3)]);  % Initial error covariance
 
