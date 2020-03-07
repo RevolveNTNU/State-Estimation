@@ -110,7 +110,7 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
         Qd = 0.5 * (Ad * Ed_prev * Q * Ed_prev' * Ad' + Ed * Q * Ed') * h;
 %         disp(Ed * Q * Ed');
         % Covariance predictor (k+1)
-        %P_hat = Ad * P_hat * Ad' + Qd;
+%         P_hat = Ad * P_hat * Ad' + Qd;
         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
 
      

@@ -1,4 +1,4 @@
-function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs] = CircleSim(simtime ,frequency, enable_plots)
+function [seed, p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs] = CircleSim(simtime ,frequency, enable_plots)
 %CIRCLESIM Summary of this function goes here
 %   Radius = 50 [m]
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
@@ -15,6 +15,20 @@ v_abs = (2 * pi * R) / 30;
 
 g = 9.81;
 t = 0;
+
+% seed.Type = 'twister';
+% seed.Seed = 0;
+% seed.State = zeros(625,1)
+% fileID = fopen('working-seed.txt','r');
+% formatSpec = '%d';
+% workingSeed = fscanf(fileID,formatSpec);
+% fclose(fileID);
+% for index=1:625
+%     seed.State = workingSeed;
+% end
+% disp(seed.State);
+
+seed = rng;
 
 % Allocate data
 time = zeros(1, N);
@@ -70,10 +84,11 @@ for k = 1:N
 %     [J,R_nb,T_nb] = eulerang(phi, theta, psi);
 
     [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
-    acc_noise = acc_std * randn(3,1);
-    ars_noise = ars_std * randn(3,1);
-    acc_noise = 0;
-    ars_noise = 0;
+%     rng(working_seed);
+%     acc_noise = acc_std * randn(3,1);
+%     ars_noise = ars_std * randn(3,1);
+    acc_noise = 0.001 * wgn(3, 1, 1);
+    ars_noise = 0.0005 * wgn(3, 1, 1);
 
     f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_n_nb + bacc_b_nb + acc_noise; 
     omega_b_imu = omega_b_nb + bars_b_nb + ars_noise;

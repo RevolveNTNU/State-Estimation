@@ -1,4 +1,4 @@
-clear;
+clear all;
 clc;
 close all;
 
@@ -36,7 +36,7 @@ ins_data = zeros(15, N);
 att_n_nb = zeros(3, N);
 
 % from sim
-[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
+[seed, p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 %initialization of kalman filter
@@ -102,10 +102,10 @@ for k = 1:N
    % update nominal states with imu input
    p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
    v_n_ins = v_n_ins +  (h * a_n_ins);
-   bacc_b_ins = bacc_b_ins;
+%    bacc_b_ins = bacc_b_ins;
    q_b_ins = quatprod(q_b_ins, q_omega_b_ins); %quatprod(q_ins, [0 ; omega_b_ins]);
    q_b_ins = q_b_ins/norm(q_b_ins);
-   bars_b_ins = bars_b_ins;
+%    bars_b_ins = bars_b_ins;
    
    x_ins = [p_n_ins ; v_n_ins ; bacc_b_ins ; q_b_ins ; bars_b_ins];
    
