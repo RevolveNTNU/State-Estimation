@@ -1,7 +1,3 @@
-seed.Type = 'twister'
-seed.Seed = 0
-seed.State =  
-
    2902078869
    3312792298
    2193463676

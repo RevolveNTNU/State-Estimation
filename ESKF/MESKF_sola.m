@@ -45,7 +45,7 @@ omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
 Ed_prev = zeros(18,12);
-ErrorStateKalman_sola(Ed_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
+ErrorStateKalman_sola(0,0,Ed_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -89,15 +89,6 @@ for k = 1:N
    
    % compute quaternion from angular rates 
    q_omega_b_ins = qbuild(omega_b_ins, h);
-%    alpha1 = omega_b_ins(1)*h;
-%    alpha2 = omega_b_ins(2)*h;
-%    alpha3 = omega_b_ins(3)*h;
-%    
-%    q_omega = [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'] + [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]'] + [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]'];  
-%    q_omega = quatprod( [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'], [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]']);
-%    q_omega = quatprod( q_omega, [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]']);
-%    q_omega = q_omega/norm(q_omega);
-
    
    % update nominal states with imu input
    p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
@@ -115,8 +106,8 @@ for k = 1:N
         count = 0;
         
         % perfect measurement
-        y(1:3) = p_n_nb(1:3,k); % + (std_pos * randn(1) * ones(1, 3))';
-        y(4:6) = att_n_nb(1:3,k); % + (std_pos * randn(1) * ones(1, 3))';
+        y(1:3) = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
+        y(4:6) = att_n_nb(1:3,k) + 0.00005 * wgn(3, 1, 1);
         
 %         y_ins = [x_ins(1:3) ; x_ins(11:13)]
         [phi_ins, theta_ins, psi_ins] = q2euler(q_b_ins);
@@ -124,8 +115,28 @@ for k = 1:N
         
         delta_y = y - y_ins;
         
+        theta = att_n_nb(1:3,k);
+        theta_norm = norm(theta);
+        q_scal = q_nb(1,k);
+        q_vec = q_nb(2:4,k);
+        theta_der = 2* [q_scal * theta + Smtrx(q_vec)*theta  -theta*q_vec' + dot(theta,q_vec)*I3 + q_vec*theta' - q_scal*Smtrx(theta)];             
+        
+        
+        q_nb_k = euler2q(theta(1), theta(2), theta(3));
+        q_nb_k = q_nb_k/norm(q_nb_k);
+        q_w = q_nb(1,k);
+        q_x = q_nb(2,k);
+        q_y = q_nb(3,k);
+        q_z = q_nb(4,k);
+        Q_deltaq = 0.5 * [ -q_x -q_y -q_z 
+                         q_w -q_z  q_y
+                         q_z  q_w -q_x
+                        -q_y  q_x  q_w];
+                    
+                    
+        
         % compute error state with ESKF
-        [delta_x, Ed_prev] = ErrorStateKalman_sola(Ed_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
+        [delta_x, Ed_prev] = ErrorStateKalman_sola(theta_der, Q_deltaq,Ed_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
         
         % add error to nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
@@ -134,18 +145,6 @@ for k = 1:N
         % multiplicative part
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
-        
-%         alpha1 = delta_x(10);
-%         alpha2 = delta_x(11);
-%         alpha3 = delta_x(12);
-%         q_omega = [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'] + [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]'] + [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]'];  
-%         q_omega = quatprod( [cos(alpha1/2) ; sin(alpha1/2)*[1 0 0]'], [cos(alpha2/2) ; sin(alpha2/2)*[0 1 0]']);
-%         q_omega = quatprod( q_omega, [cos(alpha3/2) ; sin(alpha3/2)*[0 0 1]']);
-%         q_omega = q_omega/norm(q_omega);
-   
-%         delta_q = euler2q(delta_x(10), delta_x(11), delta_x(12));
-%         delta_q = [1 ; 0.5 * delta_x(10:12)];
-%         delta_q = delta_q / norm(delta_q);
         
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);
         x_ins(10:13) = x_ins(10:13)/norm(x_ins(10:13)); 

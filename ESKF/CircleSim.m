@@ -16,6 +16,8 @@ v_abs = (2 * pi * R) / 30;
 g = 9.81;
 t = 0;
 
+
+
 % seed.Type = 'twister';
 % seed.Seed = 0;
 % seed.State = zeros(625,1)

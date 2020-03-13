@@ -1,4 +1,4 @@
-function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
+function [delta_x, Ed] = ErrorStateKalman2(theta_der,Q_deltaq, Ed_prev,delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
     deg2rad = pi/180;   
     
     Z3 = zeros(3,3);
@@ -7,13 +7,7 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
     Tacc = 200;
     Tars = 200;
     
-    h = 1/f_low;  
-
-    
-    
-%    a_g_param = 2;
-%    a_g = a_g_param * q_ins(2:4) / q_ins(1);
-%         
+    h = 1/f_low;        
 
     persistent P_hat Q R  
     if init
@@ -85,13 +79,30 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
                      Z3      Z3    I3   Z3    % w_ars
                      Z3      Z3    Z3   I3    % w_ars_bias
                      Z3      Z3    Z3   Z3 ]; 
+                 
+          
+             
+          X = blkdiag(I3,I3,I3,Q_deltaq,I3,I3);
+          Q_34 = [ 0 1 0 0
+                   0 0 1 0
+                   0 0 0 1];
+          Z_34 = zeros(3,4);
                
-          C = [I3 Z3 Z3 Z3 Z3 Z3
-               Z3 Z3 Z3 I3 Z3 Z3 ];
-           
+          H = [ I3 Z3 Z3 Z_34 Z3 Z3
+                Z3 Z3 Z3 Q_34 Z3 Z3];
+            
+          
+          H = [ I3 Z3 Z3      Z_34 Z3 Z3
+                Z3 Z3 Z3 theta_der Z3 Z3];
+            
+          C = H * X;
+          
+          
+%           C = [ I3 Z3 Z3 Z3 Z3 Z3
+%                 Z3 Z3 Z3 I3 Z3 Z3];
+            
           Ad = eye(18) + h * A;
           Ed = h * E;
-                
 
         % Discrete-time model
         % h = 1/f_low;
@@ -109,9 +120,10 @@ function [delta_x, Ed] = ErrorStateKalman2(Ed_prev,delta_y, R_nb, f_low, init, f
         
         Qd = 0.5 * (Ad * Ed_prev * Q * Ed_prev' * Ad' + Ed * Q * Ed') * h;
 %         disp(Ed * Q * Ed');
+
         % Covariance predictor (k+1)
-%         P_hat = Ad * P_hat * Ad' + Qd;
-        P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
+        P_hat = Ad * P_hat * Ad' + Qd;
+%         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
 
      
     end
