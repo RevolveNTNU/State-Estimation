@@ -124,14 +124,14 @@ for k = 1:N
         
         q_nb_k = euler2q(theta(1), theta(2), theta(3));
         q_nb_k = q_nb_k/norm(q_nb_k);
-        q_w = q_nb(1,k);
-        q_x = q_nb(2,k);
-        q_y = q_nb(3,k);
-        q_z = q_nb(4,k);
-        Q_deltaq = 0.5 * [ -q_x -q_y -q_z 
-                         q_w -q_z  q_y
-                         q_z  q_w -q_x
-                        -q_y  q_x  q_w];
+        eta = q_nb(1,k);
+        eps1 = q_nb(2,k);
+        eps2 = q_nb(3,k);
+        eps3 = q_nb(4,k);
+        Q_deltaq = 0.5 * [ -eps1 -eps2 -eps3 
+                             eta -eps3  eps2
+                            eps3   eta -eps1
+                           -eps2  eps1   eta];
                     
                     
         
@@ -183,6 +183,8 @@ plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z position [m]')
 legend('Est', 'True');
 grid on;
+saveas(gcf,'Position.jpeg')
+
 
 % VELOCITIES
 figure(2)
@@ -211,6 +213,8 @@ plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z velocity [m]')
 legend('Est', 'True');
 grid on;
+saveas(gcf,'Velocity.jpeg')
+
 
 % ACCEL BIAS
 figure(3)
@@ -239,6 +243,8 @@ plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z acc bias [deg]')
 legend('Est', 'True');
 grid on;
+saveas(gcf,'AccelBiast.jpeg')
+
 
 % ATTITUDE 
 figure(4)
@@ -268,6 +274,8 @@ xlabel('Time [s]');
 ylabel('yaw angle [deg]')
 legend('Est', 'True');
 grid on;
+saveas(gcf,'Attitude.jpeg')
+
 
 % GYRO BIAS
 figure(5)
@@ -296,6 +304,8 @@ plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Yaw bias [deg]')
 legend('Est', 'True');
 grid on;
+saveas(gcf,'GyroBias.jpeg')
+
 
 % Accelerometer input
 figure(6)
@@ -321,6 +331,8 @@ plot(time, f_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('f_b_imu Z [m/s^2]')
 legend('Measured');
 grid on;
+saveas(gcf,'AccelInput.jpeg')
+
 
 
 % Gyrometer input
@@ -347,6 +359,7 @@ plot(time, rad2deg*omega_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('omega_b_imu Z [m/s^2]')
 legend('Measured');
 grid on;
+saveas(gcf,'GyroInput.jpeg')
 
 % Position map
 figure(8)
@@ -357,3 +370,5 @@ xlabel('Y position [m]');
 ylabel('X position [m]');
 title('Position Plot');
 grid on;
+saveas(gcf,'PositionMap.jpeg')
+

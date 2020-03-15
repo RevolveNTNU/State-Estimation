@@ -44,21 +44,6 @@ function [delta_x, Ed] = ErrorStateKalman2(theta_der,Q_deltaq, Ed_prev,delta_y, 
 %        delta_q = 0;
        
     else
-            % Error model
-%         A =    [Z3 I3       Z3 Z3       Z3 
-%                 Z3 Z3 -R_nb*I3 Z3       Z3
-%                 Z3 Z3 -I3/Tacc Z3       Z3
-%                 Z3 Z3       Z3 Z3   -Tt*I3
-%                 Z3 Z3       Z3 Z3 -I3/Tars];
-% 
-%         E =    [ Z3 Z3 Z3 Z3
-%                 -I3 Z3 Z3 Z3 
-%                  Z3 I3 Z3 Z3
-%                  Z3 Z3 -I3 Z3
-%                  Z3 Z3 Z3 I3];
-% 
-%         C = [I3 Z3 Z3 Z3 Z3
-%              Z3 Z3 Z3 I3 Z3];
           phi = h * omega_b_imu(1);
           theta = h * omega_b_imu(2);
           psi = h * omega_b_imu(3);
@@ -88,27 +73,22 @@ function [delta_x, Ed] = ErrorStateKalman2(theta_der,Q_deltaq, Ed_prev,delta_y, 
                    0 0 0 1];
           Z_34 = zeros(3,4);
                
-          H = [ I3 Z3 Z3 Z_34 Z3 Z3
-                Z3 Z3 Z3 Q_34 Z3 Z3];
+%           H = [ I3 Z3 Z3 Z_34 Z3 Z3
+%                 Z3 Z3 Z3 Q_34 Z3 Z3];
             
           
-          H = [ I3 Z3 Z3      Z_34 Z3 Z3
-                Z3 Z3 Z3 theta_der Z3 Z3];
+          H = [ I3 Z3 Z3 zeros(3,4) Z3 Z3
+                Z3 Z3 Z3  theta_der Z3 Z3];
             
           C = H * X;
           
           
 %           C = [ I3 Z3 Z3 Z3 Z3 Z3
 %                 Z3 Z3 Z3 I3 Z3 Z3];
-            
+          
+          % Discrete-time model
           Ad = eye(18) + h * A;
           Ed = h * E;
-
-        % Discrete-time model
-        % h = 1/f_low;
-        % [Ad, Ed] = c2d(A, E, h);
-        % Ad = eye(15) + h * A;
-        % Ed = h * E;
         
         % KF gain
         K = P_hat * C' / (C * P_hat * C' + R);
@@ -118,11 +98,23 @@ function [delta_x, Ed] = ErrorStateKalman2(theta_der,Q_deltaq, Ed_prev,delta_y, 
         P_hat = (eye(18)-K*C) * P_hat * (eye(18) - K*C)' + K*R*K';
         P_hat = (P_hat + P_hat')/2;
         
-        Qd = 0.5 * (Ad * Ed_prev * Q * Ed_prev' * Ad' + Ed * Q * Ed') * h;
-%         disp(Ed * Q * Ed');
-
+        % ESKF reset
+        delta_theta = delta_x(10:12);
+        G = [ I3 Z3 Z3                            Z3 Z3 Z3 
+              Z3 I3 Z3                            Z3 Z3 Z3 
+              Z3 Z3 I3                            Z3 Z3 Z3 
+              Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3 
+              Z3 Z3 Z3                            Z3 I3 Z3 
+              Z3 Z3 Z3                            Z3 Z3 I3];
+          
+        P_hat = G * P_hat * G';
+        
+        
         % Covariance predictor (k+1)
+
+        Qd = 0.5 * (Ad * Ed_prev * Q * Ed_prev' * Ad' + Ed * Q * Ed') * h;
         P_hat = Ad * P_hat * Ad' + Qd;
+        
 %         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
 
      

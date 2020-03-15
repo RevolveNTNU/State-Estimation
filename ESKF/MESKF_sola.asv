@@ -122,16 +122,16 @@ for k = 1:N
         theta_der = 2* [q_scal * theta + Smtrx(q_vec)*theta  -theta*q_vec' + dot(theta,q_vec)*I3 + q_vec*theta' - q_scal*Smtrx(theta)];             
         
         
-        q_nb_k = q_nb(:,k);
+        q_nb_k = euler2q(theta(1), theta(2), theta(3));
         q_nb_k = q_nb_k/norm(q_nb_k);
-        q_w = q_nb(1,k);
-        q_x = q_nb(2,k);
-        q_y = q_nb(3,k);
-        q_z = q_nb(4,k);
-        Q_deltaq = 0.5 * [ -q_x -q_y -q_z 
-                         q_w -q_z  q_y
-                         q_z  q_w -q_x
-                        -q_y  q_x  q_w];
+        eta = q_nb(1,k);
+        eps1 = q_nb(2,k);
+        eps2 = q_nb(3,k);
+        eps3 = q_nb(4,k);
+        Q_deltaq = 0.5 * [ -eps1 -eps2 -eps3 
+                             eta -eps3  eps2
+                            eps3   eta -eps1
+                           -eps2  eps1   eta];
                     
                     
         
