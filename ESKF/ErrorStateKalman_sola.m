@@ -84,7 +84,8 @@ function [delta_x, E] = ErrorStateKalman2(theta_der,Q_deltaq, E_prev,delta_y, R_
           C = H * X;
           
           
-%           C = [ I3 Z3 Z3 Z3 Z3 Z3];
+          C = [ I3 Z3 Z3 Z3 Z3 Z3
+                Z3 Z3 Z3 I3 Z3 Z3];
           
           % Discrete-time model
           Ad = eye(18) + h * A;
