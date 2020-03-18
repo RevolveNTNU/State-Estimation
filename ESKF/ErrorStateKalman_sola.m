@@ -1,11 +1,9 @@
-function [delta_x, E] = ErrorStateKalman2(theta_der,Q_deltaq, E_prev,delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
+function [delta_x, E] = ErrorStateKalman2(E_prev,delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
+    
     deg2rad = pi/180;   
     
     Z3 = zeros(3,3);
-    I3 = eye(3);
-    
-    Tacc = 200;
-    Tars = 200;
+    I3 = eye(3); 
     
     h = 1/f_low;        
 
@@ -44,12 +42,6 @@ function [delta_x, E] = ErrorStateKalman2(theta_der,Q_deltaq, E_prev,delta_y, R_
 %        delta_q = 0;
        
     else
-          omega_b_ins = omega_b_imu - bars_b_ins;
-          phi = h * omega_b_ins(1);
-          theta = h * omega_b_ins(2);
-          psi = h * omega_b_ins(3);
-          R_omega = Rzyx(phi, theta, psi);
-
             
           A = [  Z3    I3        Z3                                   Z3       Z3    Z3    % dp
                  Z3    Z3     -R_nb    -R_nb*Smtrx(f_b_imu - bacc_b_ins)       Z3    I3    % dv
@@ -65,59 +57,37 @@ function [delta_x, E] = ErrorStateKalman2(theta_der,Q_deltaq, E_prev,delta_y, R_
                      Z3      Z3   -I3   Z3    % w_ars
                      Z3      Z3    Z3   I3    % w_ars_bias
                      Z3      Z3    Z3   Z3 ]; 
-                 
+
           
-             
-          X = blkdiag(I3,I3,I3,Q_deltaq,I3,I3);
-          Q_34 = [ 0 1 0 0
-                   0 0 1 0
-                   0 0 0 1];
-          Z_34 = zeros(3,4);
-               
-%           H = [ I3 Z3 Z3 Z_34 Z3 Z3
-%                 Z3 Z3 Z3 Q_34 Z3 Z3];
-            
-          
-          H = [ I3 Z3 Z3 zeros(3,4) Z3 Z3
-                Z3 Z3 Z3  theta_der Z3 Z3];
-            
-          C = H * X;
-          
-          
-          C = [ I3 Z3 Z3 Z3 Z3 Z3
+          H = [ I3 Z3 Z3 Z3 Z3 Z3
                 Z3 Z3 Z3 I3 Z3 Z3];
           
           % Discrete-time model
           Ad = eye(18) + h * A;
-%           Ed = h * E;
         
-        % KF gain
-        K = P_hat * C' / (C * P_hat * C' + R);
+         % KF gain
+         K = P_hat * H' / (H * P_hat * H' + R);
 
-        % corrector 
-        delta_x = K * delta_y;
-        P_hat = (eye(18)-K*C) * P_hat * (eye(18) - K*C)' + K*R*K';
-        P_hat = (P_hat + P_hat')/2;
+         % corrector 
+         delta_x = K * delta_y;
+         P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+         P_hat = (P_hat + P_hat')/2;
         
-        % ESKF reset
-        delta_theta = delta_x(10:12);
-        G = [ I3 Z3 Z3                            Z3 Z3 Z3 
-              Z3 I3 Z3                            Z3 Z3 Z3 
-              Z3 Z3 I3                            Z3 Z3 Z3 
-              Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3 
-              Z3 Z3 Z3                            Z3 I3 Z3 
-              Z3 Z3 Z3                            Z3 Z3 I3];
-          
-        P_hat = G * P_hat * G';
+         % ESKF reset
+         delta_theta = delta_x(10:12);
+         G = [ I3 Z3 Z3                            Z3 Z3 Z3 
+               Z3 I3 Z3                            Z3 Z3 Z3 
+               Z3 Z3 I3                            Z3 Z3 Z3 
+               Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3 
+               Z3 Z3 Z3                            Z3 I3 Z3 
+               Z3 Z3 Z3                            Z3 Z3 I3];
+           
+         P_hat = G * P_hat * G';
         
         
         % Covariance predictor (k+1)
-
         Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
         P_hat = Ad * P_hat * Ad' + Qd;
-        
-%         P_hat = Ad * P_hat * Ad' + Ed * Q * Ed';
-
-     
+             
     end
 end
