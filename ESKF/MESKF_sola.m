@@ -40,13 +40,17 @@ g_err_data = zeros(3,N);
 [seed, p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
+% dual gnss config
+r_b_1 = [0.5 0 0]';
+r_b_2 = [-0.5 0 0.3]';
+
 %initialization of kalman filter
 f_b_imu_0 = [0 0 0]';
 omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
-E_prev = zeros(18,12);
-ErrorStateKalman_sola(E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
+E_prev = zeros(15,12);
+ErrorStateKalman_sola(r_b_1, r_b_2, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -110,24 +114,49 @@ for k = 1:N
         % noisy measurements
         p_meas = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
         q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
-
-        % delta y
-        delta_p = p_meas - p_n_ins; 
-
+        
         q_conj = quatconj(q_n_ins')';
         delta_q = quatprod(q_conj, q_meas);
         delta_theta = 2*delta_q(2:4);
         
-        delta_y = [delta_p; delta_theta];         
+        p_gnss_1 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_1 - Smtrx(R_nb_ins*r_b_1)*delta_theta;
+        p_gnss_2 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_2 - Smtrx(R_nb_ins*r_b_2)*delta_theta;
         
+        R_nb_t = Rquat(q_nb(1:4,k)');
+        
+        p_gnss_1 = p_n_nb(1:3,k) + R_nb_t * r_b_1;
+        p_gnss_2 = p_n_nb(1:3,k) + R_nb_t * r_b_2;
+%         p_gnss_3 = p_n_nb(1:3,k) + R_nb_t * r_b_3;
+        
+        
+        p_hat_1 = p_n_ins + R_nb_ins * r_b_1;
+        p_hat_2 = p_n_ins + R_nb_ins * r_b_2;
+%         p_hat_3 = p_n_ins + R_nb_ins * r_b_3;
+        
+        
+%         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
+        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2)];
         % compute error state with ESKF
-        [delta_x, E_prev] = ErrorStateKalman_sola(E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
-        
+        [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
+
+% 
+%         % delta y
+%         delta_p = p_meas - p_n_ins; 
+% 
+%         q_conj = quatconj(q_n_ins')';
+%         delta_q = quatprod(q_conj, q_meas);
+%         delta_theta = 2*delta_q(2:4);
+%         
+%         delta_y = [delta_p; delta_theta];         
+%         
+%         % compute error state with ESKF
+%         [delta_x, E_prev] = ErrorStateKalman_sola(E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
+%         
         % inject error into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
         
-        g_n_nb = g_n_nb + delta_x(16:18);
+%         g_n_nb = g_n_nb + delta_x(16:18);
         
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
