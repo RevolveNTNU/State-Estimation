@@ -50,7 +50,12 @@ omega_b_imu_data = zeros(3,N);
 p_n_nb = [0 0 0]';
 v_n_nb = [v_abs 0 0]';
 % att_n_nb = [0 0 0]';
+
+roll = deg2rad*(-5);
+pitch = deg2rad*(3);
+yaw = 0;
 q_nb = [1 0 0 0]';
+%q_nb = euler2q(roll, pitch, yaw);
 
 % Bias
 acc_bias = [-0.4 -0.5 0.3]';

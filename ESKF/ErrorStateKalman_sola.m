@@ -1,4 +1,4 @@
-function [delta_x, E] = ErrorStateKalman2(E_prev,delta_y, R_nb, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
+function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
     
     deg2rad = pi/180;   
     
@@ -13,7 +13,8 @@ function [delta_x, E] = ErrorStateKalman2(E_prev,delta_y, R_nb, f_low, init, f_b
         R_pos = std_pos^2*I3;
         std_att = 10 * deg2rad;
         R_att = std_att^2*I3;
-        R = blkdiag(R_pos, R_att);
+%         R = blkdiag(R_pos, R_pos, R_pos, R_att );
+        R = blkdiag(R_pos, R_pos, R_att );
 
         std_acc = 0.01 * sqrt(10);
         Q_acc = std_acc * std_acc * I3; 
@@ -42,28 +43,40 @@ function [delta_x, E] = ErrorStateKalman2(E_prev,delta_y, R_nb, f_low, init, f_b
 %        delta_q = 0;
        
     else
+          %R_nb_hat = eye(3); 
             
-          A = [  Z3    I3        Z3                                   Z3       Z3    Z3    % dp
-                 Z3    Z3     -R_nb    -R_nb*Smtrx(f_b_imu - bacc_b_ins)       Z3    I3    % dv
-                 Z3    Z3        Z3                                   Z3       Z3    Z3    % dbacc
-                 Z3    Z3        Z3      -Smtrx(omega_b_imu - bars_b_ins)     -I3    Z3    % dtheta ???????
-                 Z3    Z3        Z3                                   Z3       Z3    Z3    % dbars
-                 Z3    Z3        Z3                                   Z3       Z3    Z3] ; % dg
+          A = [  Z3    I3        Z3                                           Z3       Z3    Z3    % dp
+                 Z3    Z3     -R_nb_hat    -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)       Z3    I3    % dv
+                 Z3    Z3        Z3                                           Z3       Z3    Z3    % dbacc
+                 Z3    Z3        Z3             -Smtrx(omega_b_imu - bars_b_ins)      -I3    Z3    % dtheta ???????
+                 Z3    Z3        Z3                                           Z3       Z3    Z3    % dbars
+                 Z3    Z3        Z3                                           Z3       Z3    Z3] ; % dg
             
  
           E = [      Z3      Z3    Z3   Z3
-                  -R_nb      Z3    Z3   Z3    % w_acc
+                  -R_nb_hat      Z3    Z3   Z3    % w_acc
                      Z3      I3    Z3   Z3    % w_acc_bias
                      Z3      Z3   -I3   Z3    % w_ars
                      Z3      Z3    Z3   I3    % w_ars_bias
                      Z3      Z3    Z3   Z3 ]; 
 
           
-          H = [ I3 Z3 Z3 Z3 Z3 Z3
-                Z3 Z3 Z3 I3 Z3 Z3];
-          
-          % Discrete-time model
-          Ad = eye(18) + h * A;
+%           H = [ I3 Z3 Z3 Z3 Z3 Z3
+%                 Z3 Z3 Z3 I3 Z3 Z3];
+
+%          H = [ I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_1) Z3 Z3
+%                I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_2) Z3 Z3
+%                I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_3) Z3 Z3
+%                Z3 Z3 Z3 I3 Z3 Z3];
+
+         H = [ I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_1) Z3 Z3
+               I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_2) Z3 Z3
+               Z3 Z3 Z3 I3 Z3 Z3];
+           
+         rank(obsv(A(1:15,1:15),H(:,1:15)));
+         
+         % Discrete-time model
+         Ad = eye(18) + h * A;
         
          % KF gain
          K = P_hat * H' / (H * P_hat * H' + R);
