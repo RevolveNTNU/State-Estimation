@@ -37,12 +37,12 @@ att_n_nb = zeros(3, N);
 g_err_data = zeros(3,N);
 
 % from sim
-[seed, p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 % dual gnss config
-r_b_1 = [0.5 0 0]';
-r_b_2 = [-0.5 0 0.3]';
+r_b_1 = [0.5 0.5 0.5]';
+r_b_2 = [-0.5 -0.2 0.3]';
 
 %initialization of kalman filter
 f_b_imu_0 = [0 0 0]';
@@ -135,23 +135,11 @@ for k = 1:N
         
         
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
+%         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2)];
         % compute error state with ESKF
         [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
-
-% 
-%         % delta y
-%         delta_p = p_meas - p_n_ins; 
-% 
-%         q_conj = quatconj(q_n_ins')';
-%         delta_q = quatprod(q_conj, q_meas);
-%         delta_theta = 2*delta_q(2:4);
-%         
-%         delta_y = [delta_p; delta_theta];         
-%         
-%         % compute error state with ESKF
-%         [delta_x, E_prev] = ErrorStateKalman_sola(E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
-%         
+       
         % inject error into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
@@ -377,7 +365,7 @@ figure(8)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, ssa(rad2deg*att_n_nb(1,:), 'deg') - ssa(rad2deg*ins_data(10,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+plot(time, ssa(rad2deg*att_n_nb(1,:) - rad2deg*ins_data(10,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
 ylabel('X velocity error [m/s]')
 legend('Est');
 title('Attotide Error');
@@ -385,14 +373,14 @@ grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, ssa(rad2deg*att_n_nb(2,:),'deg') - ssa(rad2deg*ins_data(11,:), 'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+plot(time, ssa(rad2deg*att_n_nb(2,:) - rad2deg*ins_data(11,:), 'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
 ylabel('Y velocity error [m/s]')
 legend('Est');
 grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, ssa(rad2deg*att_n_nb(3,:),'deg') - ssa(rad2deg*ins_data(12,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
 ylabel('Z velocity error [m/s]')
 legend('Est');
 grid on;

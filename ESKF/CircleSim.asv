@@ -13,7 +13,7 @@ N = simtime/h;
 R = 10 * sqrt(26);
 v_abs = (2 * pi * R) / 30;
 inclination = 20;
-height = 18.20;
+height = 18,20;
 
 g = 9.81;
 t = 0;
@@ -51,11 +51,11 @@ p_n_nb = [0 0 18.20]';
 v_n_nb = [v_abs 0 0]';
 % att_n_nb = [0 0 0]';
 
-roll = deg2rad * -20;
+roll = deg2rad * -inclination;
 pitch = deg2rad * 0;
 yaw = deg2rad * 0;
 q_nb = euler2q(roll, pitch, yaw);
-% q_nb = [1 0 0 0]';
+q_nb = [1 0 0 0]';
 
 % Bias
 acc_bias = [-0.4 -0.5 0.3]';
@@ -70,13 +70,12 @@ ars_std = deg2rad * 2;
 
 v_b_nb = [0 0 0]';
 
-% alpha = 0;
-% pitch_rate = deg2rad * 11.31*cos(alpha - (pi/2));
-% roll_rate = deg2rad * 11.31*cos(alpha);
-% yaw_rate = pi/15;
-% omega_b_nb = [pitch_rate roll_rate yaw_rate]';
-omega_b_nb = [0 0 pi/15]';
-a_b_nb = [0 (v_abs^2)/R 0]';
+alpha = 0;
+pitch_rate = deg2rad * 11.31*cos(alpha - (pi/2));
+roll_rate = deg2rad * 11.31*cos(alpha);
+yaw_rate = pi/15;
+omega_b_nb = [pitch_rate roll_rate yaw_rate]';
+a_b_nb = [0 (v_abs^2)/R*cosd(20) ((5*sin(alpha-(pi/2))) + (v_abs^2)/R*(-sind(20))) ]';
 g_n_nb = [0 0 g]';
 
 
@@ -122,11 +121,11 @@ for k = 1:N
     t = t + h;
     t_count = t_count + h;
     
-%     alpha = alpha + (pi/(15*h));
-%     [ax_b_nb, ay_b_nb, az_b_nb] = trueBodyAccel(alpha, inclination);
-%     a_b_nb = [ax_b_nb, ay_b_nb, az_b_nb]';
-%     [omegax_b_nb, omegay_b_nb, omegaz_b_nb] = trueBodyAngRate(alpha, height);
-%     omega_b_nb = [omegax_b_nb, omegay_b_nb, omegaz_b_nb]';
+    alpha = alpha + (pi/(15*h));
+    [ax_b_nb, ay_b_nb, az_b_nb] = trueBodyAccel(alpha, inclination);
+    a_b_nb = [ax_b_nb, ay_b_nb, az_b_nb]';
+    [omegax_b_nb, omegay_b_nb, omegaz_b_nb] = trueBodyAngRate(alpha, height);
+    omega_b_nb = [omegax_b_nb, omegay_b_nb, omegaz_b_nb]';
     
     
 %     if(t_count >= 15)
