@@ -73,7 +73,7 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_
                I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_2) Z3 Z3
                Z3 Z3 Z3 I3 Z3 Z3];
            
-         rank(obsv(A(1:15,1:15),H(:,1:15)));
+         rank(obsv(A),H));
          
          % Discrete-time model
          Ad = eye(18) + h * A;
