@@ -149,6 +149,8 @@ for k = 1:N
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);
+%         delta_q = [1 ; 0.5*delta_x(10:12)];
+%         x_ins(10:13) = quatprod(x_ins(10:13), delta_q);
         x_ins(10:13) = x_ins(10:13)/norm(x_ins(10:13)); 
    end
     

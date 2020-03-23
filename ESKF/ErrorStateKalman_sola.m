@@ -50,32 +50,32 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_
 %                  Z3    Z3        Z3                                   Z3       Z3    Z3    % dbars
 %                  Z3    Z3        Z3                                   Z3       Z3    Z3] ; % dg
             
-          A = [  Z3    I3        Z3                                           Z3       Z3   % dp
+          A = [  Z3    I3            Z3                                       Z3       Z3   % dp
                  Z3    Z3     -R_nb_hat    -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)       Z3   % dv
-                 Z3    Z3        Z3                                           Z3       Z3   % dbacc
-                 Z3    Z3        Z3             -Smtrx(omega_b_imu - bars_b_ins)      -I3   % dtheta ???????
-                 Z3    Z3        Z3                                           Z3       Z3];   % dbars
+                 Z3    Z3            Z3                                       Z3       Z3   % dbacc
+                 Z3    Z3            Z3         -Smtrx(omega_b_imu - bars_b_ins)      -I3   % dtheta ???????
+                 Z3    Z3            Z3                                       Z3       Z3];   % dbars
 %                  Z3    Z3        Z3                                           Z3       Z3]; % dg
              
             
  
-          E = [      Z3      Z3    Z3   Z3
-                  -R_nb_hat      Z3    Z3   Z3    % w_acc
-                     Z3      I3    Z3   Z3    % w_acc_bias
-                     Z3      Z3   -I3   Z3    % w_ars
-                     Z3      Z3    Z3   I3];    % w_ars_bias
+          E = [        Z3      Z3    Z3   Z3
+                -R_nb_hat      Z3    Z3   Z3    % w_acc
+                       Z3      I3    Z3   Z3    % w_acc_bias
+                       Z3      Z3   -I3   Z3    % w_ars
+                       Z3      Z3    Z3   I3];    % w_ars_bias
 %                      Z3      Z3    Z3   Z3 ]; 
 
           
-          H = [ I3 Z3 Z3 Z3 Z3 Z3
-                I3 Z3 Z3 I3 Z3 Z3];
+%           H = [ I3 Z3 Z3 Z3 Z3 Z3
+%                 I3 Z3 Z3 I3 Z3 Z3];
             
-          H = [ I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_1) Z3
-                I3 Z3 Z3 -Smtrx(R_nb_hat*r_b_2) Z3];
+          H = [ I3 Z3 Z3 -R_nb_hat*Smtrx(r_b_1) Z3
+                I3 Z3 Z3 -R_nb_hat*Smtrx(r_b_2) Z3];
 %                 Z3 Z3 Z3                     I3 Z3];
                
-         M = rref(obsv(A,H))  
-         rank(obsv(A,H));
+%          M = rref(obsv(A,H))  
+         rank(obsv(A,H))
 
           
           % Discrete-time model
