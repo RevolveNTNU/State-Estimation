@@ -1,11 +1,21 @@
-function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins)
+function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
     
     deg2rad = pi/180;   
     
     Z3 = zeros(3,3);
     I3 = eye(3); 
     
-    h = 1/f_low;        
+    Tacc = 1000;
+    Tars = 1000;
+    
+    h = 1/f_low; 
+    
+    p_n_ins = x_n_ins(1:3);
+    v_n_ins = x_n_ins(4:6);
+    bacc_b_ins = x_n_ins(7:9);
+    q_n_ins = x_n_ins(10:13);
+    q_n_ins = q_n_ins/norm(q_n_ins);
+    bars_b_ins = x_n_ins(14:16);
 
     persistent P_hat Q R  
     if init
@@ -13,7 +23,9 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_
         R_pos = std_pos^2*I3;
         std_att = 10 * deg2rad;
         R_att = std_att^2*I3;
-        R = blkdiag(R_pos, R_pos);
+        std_vel = 1;
+        R_vel = std_vel^2*I3;
+        R = blkdiag(R_pos, R_pos, std_vel^2);
 
         std_acc = 0.01 * sqrt(10);
         Q_acc = std_acc * std_acc * I3; 
@@ -36,7 +48,7 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_
 %                        1e-10 1e-10 1e-10 ...
 %                        1e-6 1e-6 1e-6]); 
                    
-       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
+       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
 
        delta_x = 0;
 %        delta_q = 0;
@@ -50,12 +62,12 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_
 %                  Z3    Z3        Z3                                   Z3       Z3    Z3    % dbars
 %                  Z3    Z3        Z3                                   Z3       Z3    Z3] ; % dg
             
-          A = [  Z3    I3            Z3                                       Z3       Z3   % dp
-                 Z3    Z3     -R_nb_hat    -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)       Z3   % dv
-                 Z3    Z3            Z3                                       Z3       Z3   % dbacc
-                 Z3    Z3            Z3         -Smtrx(omega_b_imu - bars_b_ins)      -I3   % dtheta ???????
-                 Z3    Z3            Z3                                       Z3       Z3];   % dbars
-%                  Z3    Z3        Z3                                           Z3       Z3]; % dg
+          A = [  Z3    I3            Z3                                       Z3           Z3  Z3  % dp
+                 Z3    Z3     -R_nb_hat    -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)           Z3  I3 % dv
+                 Z3    Z3  -(1/Tacc)*I3                                       Z3           Z3  Z3 % dbacc
+                 Z3    Z3            Z3         -Smtrx(omega_b_imu - bars_b_ins)          -I3  Z3 % dtheta ???????
+                 Z3    Z3            Z3                                       Z3 -(1/Tacc)*I3  Z3   % dbars
+                 Z3    Z3            Z3                                       Z3           Z3  Z3]; % dg
              
             
  
@@ -63,40 +75,48 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_
                 -R_nb_hat      Z3    Z3   Z3    % w_acc
                        Z3      I3    Z3   Z3    % w_acc_bias
                        Z3      Z3   -I3   Z3    % w_ars
-                       Z3      Z3    Z3   I3];    % w_ars_bias
-%                      Z3      Z3    Z3   Z3 ]; 
+                       Z3      Z3    Z3   I3  % w_ars_bias
+                       Z3      Z3    Z3   Z3 ]; 
 
           
 %           H = [ I3 Z3 Z3 Z3 Z3 Z3
 %                 I3 Z3 Z3 I3 Z3 Z3];
-            
-          H = [ I3 Z3 Z3 -R_nb_hat*Smtrx(r_b_1) Z3
-                I3 Z3 Z3 -R_nb_hat*Smtrx(r_b_2) Z3];
-%                 Z3 Z3 Z3                     I3 Z3];
+
+          % Ground Speed 
+          z13 = [0 0 0];
+          
+          H_gss = [ 0, 0, 0, (R_nb_hat(1,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,1)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(2,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(3,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(2,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), 0, 0, 0, ((R_nb_hat(1,3)*v_n_ins(1) + R_nb_hat(2,3)*v_n_ins(2) + R_nb_hat(3,3)*v_n_ins(3))*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -((R_nb_hat(1,3)*v_n_ins(1) + R_nb_hat(2,3)*v_n_ins(2) + R_nb_hat(3,3)*v_n_ins(3))*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(2*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3))*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) - 2*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3))*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/(2*((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)), (r_b_3(3)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(1)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) - r_b_3(2)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), 0, 0, 0];
+          
+          
+          
+          H = [ I3         Z3  Z3 -R_nb_hat*Smtrx(r_b_1)         Z3 Z3   % gnss_1
+                I3         Z3  Z3 -R_nb_hat*Smtrx(r_b_2)         Z3 Z3   % gnss_2
+                H_gss ];
+%                 z13  H_gss_vel  z13              H_gss_att H_gss_bars z13]; % ground_speed
+%                 Z3 Z3 Z3                     I3 Z3]; % delta_theta
                
 %          M = rref(obsv(A,H))  
          rank(obsv(A,H))
 
           
           % Discrete-time model
-         Ad = eye(15) + h * A;
+         Ad = eye(18) + h * A;
         
          % KF gain
          K = P_hat * H' / (H * P_hat * H' + R);
 
          % corrector 
          delta_x = K * delta_y;
-         P_hat = (eye(15)-K*H) * P_hat * (eye(15) - K*H)' + K*R*K';
-         P_hat = (P_hat + P_hat')/2;
+         P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
         
          % ESKF reset
          delta_theta = delta_x(10:12);
-         G = [ I3 Z3 Z3                            Z3 Z3 
-               Z3 I3 Z3                            Z3 Z3 
-               Z3 Z3 I3                            Z3 Z3 
-               Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 
-               Z3 Z3 Z3                            Z3 I3]; 
-%                Z3 Z3 Z3                            Z3 Z3];
+         G = [ I3 Z3 Z3                            Z3 Z3 Z3 
+               Z3 I3 Z3                            Z3 Z3 Z3
+               Z3 Z3 I3                            Z3 Z3 Z3
+               Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3
+               Z3 Z3 Z3                            Z3 I3 Z3
+               Z3 Z3 Z3                            Z3 Z3 I3];
            
          P_hat = G * P_hat * G';
         
@@ -104,6 +124,8 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2,E_prev,delta_y, R_nb_
         % Covariance predictor (k+1)
         Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
         P_hat = Ad * P_hat * Ad' + Qd;
+        P_hat = (P_hat + P_hat')/2;
+
              
     end
 end

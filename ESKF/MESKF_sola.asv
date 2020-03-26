@@ -43,14 +43,15 @@ g_err_data = zeros(3,N);
 % dual gnss config
 r_b_1 = [0.5 0.5 0.5]';
 r_b_2 = [-0.5 -0.2 0.3]';
+r_b_3 = [0.5 -0.4 0.1]'; 
 
 %initialization of kalman filter
 f_b_imu_0 = [0 0 0]';
 omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
-E_prev = zeros(15,12);
-ErrorStateKalman_sola(r_b_1, r_b_2, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, bacc_b_ins, bars_b_ins);
+E_prev = zeros(18,12);
+ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -119,36 +120,43 @@ for k = 1:N
         delta_q = quatprod(q_conj, q_meas);
         delta_theta = 2*delta_q(2:4);
         
-        p_gnss_1 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_1 - Smtrx(R_nb_ins*r_b_1)*delta_theta;
-        p_gnss_2 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_2 - Smtrx(R_nb_ins*r_b_2)*delta_theta;
+%         p_gnss_1 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_1 - Smtrx(R_nb_ins*r_b_1)*delta_theta;
+%         p_gnss_2 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_2 - Smtrx(R_nb_ins*r_b_2)*delta_theta;
         
         R_nb_t = Rquat(q_nb(1:4,k)');
         
         p_gnss_1 = p_n_nb(1:3,k) + R_nb_t * r_b_1;
         p_gnss_2 = p_n_nb(1:3,k) + R_nb_t * r_b_2;
 %         p_gnss_3 = p_n_nb(1:3,k) + R_nb_t * r_b_3;
+%         v_gss = v_n_nb(1:3,k) + R_nb_t * r_b_3;
+        H_gss_alloc = [1 0 0; 0 1 0; 0 0 0];
+        velocity_gss = H_gss_alloc*( R_nb_ins'*v_n_nb(1:3,k) + Smtrx( omega_b_imu - b_ars_b)*r_b );
+        y_gss = norm( velocity_gss );
         
-        
+
         p_hat_1 = p_n_ins + R_nb_ins * r_b_1;
         p_hat_2 = p_n_ins + R_nb_ins * r_b_2;
 %         p_hat_3 = p_n_ins + R_nb_ins * r_b_3;
-        
+%         v_hat = v_n_ins + R_nb_ins * r_b_3;
+        v_hat = R_nb_ins(1,1) * v_n_ins(1) + R_nb_ins(2,1) * v_n_ins(2) + R_nb_ins(3,1) * v_n_ins(3) - r_b_3(3)*(bars_b_ins(2) - omega_b_imu(2,k)) + r_b_3(2)*(bars_b_ins(3) - omega_b_imu(3,k));
         
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
-        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2)];
+        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat)];
         % compute error state with ESKF
-        [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, bacc_b_ins, bars_b_ins);
+        [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
        
         % inject error into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
         
-%         g_n_nb = g_n_nb + delta_x(16:18);
+        g_n_nb = g_n_nb + delta_x(16:18);
         
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);
+%         delta_q = [1 ; 0.5*delta_x(10:12)];
+%         x_ins(10:13) = quatprod(x_ins(10:13), delta_q);
         x_ins(10:13) = x_ins(10:13)/norm(x_ins(10:13)); 
    end
     
@@ -156,6 +164,8 @@ for k = 1:N
 end
 
 
+% PLOTS
+   
 % PLOTS
    
 % POSITION
@@ -202,14 +212,14 @@ subplot(3, 1, 2)
 hold on;
 plot(time, p_n_nb(2,:) - ins_data(2,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
 ylabel('Y position [m]')
-legend('Est');
+legend('Error');
 grid on;
 
 subplot(3, 1, 3)
 hold on;
 plot(time, p_n_nb(3,:) - ins_data(3,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
 ylabel('Z position [m]')
-legend('Est');
+legend('Error');
 grid on;
 saveas(gcf,'results/PositionError.jpeg')
 
@@ -249,23 +259,23 @@ figure(gcf);
 subplot(3, 1, 1)
 hold on;
 plot(time, v_n_nb(1,:) - ins_data(4,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X velocity error [m/s]')
-legend('Est');
+ylabel('X velocity [m/s]')
+legend('Error');
 title('Velocity Error');
 grid on;
 
 subplot(3, 1, 2)
 hold on;
 plot(time, v_n_nb(2,:) - ins_data(5,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Y velocity error [m/s]')
-legend('Est');
+ylabel('Y velocity [m/s]')
+legend('Error');
 grid on;
 
 subplot(3, 1, 3)
 hold on;
 plot(time, v_n_nb(3,:) - ins_data(6,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z velocity error [m/s]')
-legend('Est');
+ylabel('Z velocity [m/s]')
+legend('Error');
 grid on;
 saveas(gcf,'results/VelocityError.jpeg')
 
@@ -307,8 +317,8 @@ figure(gcf);
 subplot(3, 1, 1)
 hold on;
 plot(time, bacc_b_nb(1,:) - ins_data(7,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X accel bias error [m/s^2]')
-legend('Est');
+ylabel('X accel bias [m/s^2]')
+legend('Error');
 title('Accelerometer Bias Error');
 grid on;
 
@@ -316,14 +326,14 @@ subplot(3, 1, 2)
 hold on;
 plot(time, bacc_b_nb(2,:) - ins_data(8,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
 ylabel('Y accel bias error [m/s^2]')
-legend('Est');
+legend('Error');
 grid on;
 
 subplot(3, 1, 3)
 hold on;
 plot(time, bacc_b_nb(3,:) - ins_data(9,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z accel bias error [m/s^2]')
-legend('Est');
+ylabel('Z accel bias [m/s^2]')
+legend('Error');
 grid on;
 saveas(gcf,'results/AccelBiasError.jpeg')
 
@@ -354,7 +364,7 @@ hold on;
 plot(time, rad2deg*ins_data(12,:), 'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, rad2deg*att_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 xlabel('Time [s]');
-ylabel('yaw angle [deg]')
+ylabel('Yaw angle [deg]')
 legend('Est', 'True');
 grid on;
 saveas(gcf,'results/Attitude.jpeg')
@@ -366,23 +376,23 @@ figure(gcf);
 subplot(3, 1, 1)
 hold on;
 plot(time, ssa(rad2deg*att_n_nb(1,:) - rad2deg*ins_data(10,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X velocity error [m/s]')
-legend('Est');
-title('Attotide Error');
+ylabel('Roll angle [deg]')
+legend('Error');
+title('Attitude Error');
 grid on;
 
 subplot(3, 1, 2)
 hold on;
 plot(time, ssa(rad2deg*att_n_nb(2,:) - rad2deg*ins_data(11,:), 'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Y velocity error [m/s]')
-legend('Est');
+ylabel('Pitch angle [deg]')
+legend('Error');
 grid on;
 
 subplot(3, 1, 3)
 hold on;
 plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z velocity error [m/s]')
-legend('Est');
+ylabel('Yaw angle [deg]')
+legend('Error');
 grid on;
 saveas(gcf,'results/AttitudeError.jpeg')
 
@@ -395,7 +405,7 @@ subplot(3, 1, 1)
 hold on;
 plot(time, ins_data(13,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bars_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Roll bias [deg]')
+ylabel('Roll bias [deg/s]')
 legend('Est', 'True');
 title('Gyro bias');
 grid on;
@@ -404,7 +414,7 @@ subplot(3, 1, 2)
 hold on;
 plot(time, ins_data(14,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bars_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Pitch bias [deg]')
+ylabel('Pitch bias [deg/s]')
 legend('Est', 'True');
 grid on;
 
@@ -412,7 +422,7 @@ subplot(3, 1, 3)
 hold on;
 plot(time, ins_data(15,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
 plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Yaw bias [deg]')
+ylabel('Yaw bias [deg/s]')
 legend('Est', 'True');
 grid on;
 saveas(gcf,'results/GyroBias.jpeg')
@@ -422,24 +432,24 @@ figure(10)
 figure(gcf);
 subplot(3, 1, 1)
 hold on;
-plot(time, bars_b_nb(1,:) - ins_data(13,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X gyro bias error [rad/s^2]')
-legend('Est');
+plot(time, rad2deg*(bars_b_nb(1,:) - ins_data(13,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+ylabel('Roll bias [deg/s]')
+legend('Error');
 title('Gyro Bias Error');
 grid on;
 
 subplot(3, 1, 2)
 hold on;
-plot(time, bars_b_nb(2,:) - ins_data(14,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Y gyro bias error [rad/s^2]')
-legend('Est');
+plot(time, rad2deg*(bars_b_nb(2,:) - ins_data(14,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+ylabel('Pitch bias [deg/s]')
+legend('Error');
 grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, bars_b_nb(3,:) - ins_data(15,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z gyro bias error [rad/s^2]')
-legend('Est');
+plot(time, rad2deg*(bars_b_nb(3,:) - ins_data(15,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+ylabel('Yaw bias [deg/s]')
+legend('Error');
 grid on;
 saveas(gcf,'results/GyroBiasError.jpeg')
 
@@ -507,7 +517,7 @@ subplot(3, 1, 1)
 hold on;
 plot(time, g_err_data(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('gravity err X [m/s^2]')
-legend('Estimated');
+legend('Est');
 title('Gravity Error');
 grid on;
 
@@ -538,4 +548,3 @@ ylabel('X position [m]');
 title('Position Plot');
 grid on;
 saveas(gcf,'results/PositionMap.jpeg')
-
