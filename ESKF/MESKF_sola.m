@@ -100,12 +100,13 @@ for k = 1:N
    % update nominal states with imu input
    p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
    v_n_ins = v_n_ins +  (h * a_n_ins);
-%    bacc_b_ins = bacc_b_ins;
+  %bacc_b_ins = bacc_b_ins;
    q_n_ins = quatprod(q_n_ins, q_omega_b_ins); 
    q_n_ins = q_n_ins/norm(q_n_ins);
-%    bars_b_ins = bars_b_ins;
+  %bars_b_ins = bars_b_ins;
    
    x_ins = [p_n_ins ; v_n_ins ; bacc_b_ins ; q_n_ins ; bars_b_ins];
+   
    
    count = count + 1;
 
@@ -113,52 +114,55 @@ for k = 1:N
         count = 0;
         
         % noisy measurements
-        p_meas = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
-        q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
-        
-        q_conj = quatconj(q_n_ins')';
-        delta_q = quatprod(q_conj, q_meas);
-        delta_theta = 2*delta_q(2:4);
+%         p_meas = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
+%         q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
+%         
+%         q_conj = quatconj(q_n_ins')';
+%         delta_q = quatprod(q_conj, q_meas);
+%         delta_theta = 2*delta_q(2:4);
         
 %         p_gnss_1 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_1 - Smtrx(R_nb_ins*r_b_1)*delta_theta;
 %         p_gnss_2 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_2 - Smtrx(R_nb_ins*r_b_2)*delta_theta;
         
+        % dual gnss position meas
         R_nb_t = Rquat(q_nb(1:4,k)');
-        
         p_gnss_1 = p_n_nb(1:3,k) + R_nb_t * r_b_1;
         p_gnss_2 = p_n_nb(1:3,k) + R_nb_t * r_b_2;
 %         p_gnss_3 = p_n_nb(1:3,k) + R_nb_t * r_b_3;
-%         v_gss = v_n_nb(1:3,k) + R_nb_t * r_b_3;
-        H_gss_alloc = [1 0 0; 0 1 0; 0 0 0];
-        v_gss = H_gss_alloc*( R_nb_ins'*v_n_nb(1:3,k) + Smtrx( omega_b_imu(:,k) - bars_b_nb)*r_b_3 );
-        v_gss = norm( v_gss );
-        
 
+        % corresponding position estimates
         p_hat_1 = p_n_ins + R_nb_ins * r_b_1;
         p_hat_2 = p_n_ins + R_nb_ins * r_b_2;
 %         p_hat_3 = p_n_ins + R_nb_ins * r_b_3;
-%         v_hat = v_n_ins + R_nb_ins * r_b_3;
+        
+        % ground speed velocity meas
+        H_gss_alloc = [1 0 0; 0 1 0; 0 0 0];
+        v_gss = H_gss_alloc*( R_nb_ins'*v_n_nb(1:3,k) + Smtrx( omega_b_imu(:,k) - bars_b_nb)*r_b_3 );
+        v_gss = norm( v_gss );
+
+        % corresponding velocity estimates
         v_hat = R_nb_ins' * v_n_ins - r_b_3(3)*(bars_b_ins(2) - omega_b_imu(2,k)) + r_b_3(2)*(bars_b_ins(3) - omega_b_imu(3,k));
         v_hat = norm(v_hat);
         
+        % compute difference 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat)];
+        
         % compute error state with ESKF
         [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_nb, x_ins);
        
-        % inject error into nominal state
+        % inject error state into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
-        
         g_n_nb = g_n_nb + delta_x(16:18);
-        
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);
 %         delta_q = [1 ; 0.5*delta_x(10:12)];
 %         x_ins(10:13) = quatprod(x_ins(10:13), delta_q);
         x_ins(10:13) = x_ins(10:13)/norm(x_ins(10:13)); 
+        
    end
     
    
@@ -166,9 +170,7 @@ end
 
 
 % PLOTS
-   
-% PLOTS
-   
+      
 % POSITION
 figure(1)
 figure(gcf);
