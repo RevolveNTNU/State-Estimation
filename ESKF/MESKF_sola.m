@@ -37,7 +37,7 @@ att_n_nb = zeros(3, N);
 g_err_data = zeros(3,N);
 
 % from sim
-[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = CircleSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = SkidPadSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 % dual gnss config
@@ -114,7 +114,7 @@ for k = 1:N
         count = 0;
         
         % noisy measurements
-%         p_meas = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
+        p_n_nb(1:3,k) = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
 %         q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
 %         
 %         q_conj = quatconj(q_n_ins')';
@@ -147,6 +147,7 @@ for k = 1:N
         % compute difference 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
+%         delta_y = [(p_gnss_1 - p_hat_1); (p_gnss_2 - p_hat_2)];
         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat)];
         
         % compute error state with ESKF
@@ -521,7 +522,7 @@ hold on;
 plot(time, g_err_data(1,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('gravity err X [m/s^2]')
 legend('Est');
-title('Gravity Error');
+title('Gravity');
 grid on;
 
 subplot(3, 1, 2)
@@ -545,7 +546,8 @@ saveas(gcf,'results/GravityErrorState.jpeg')
 figure(14)
 figure(gcf)
 subplot(1, 1, 1)
-plot(ins_data(2,:), ins_data(1,:), 'Color', 'black', 'Linewidth', 1.5);
+plot(p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+plot(ins_data(2,:), ins_data(1,:), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
 xlabel('Y position [m]');
 ylabel('X position [m]');
 title('Position Plot');

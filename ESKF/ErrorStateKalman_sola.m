@@ -26,6 +26,8 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_
         std_vel = 1;
         R_vel = std_vel^2*I3;
         R = blkdiag(R_pos, R_pos, std_vel^2);
+%         R = blkdiag(R_pos , R_pos);
+
 
         std_acc = 0.01 * sqrt(10);
         Q_acc = std_acc * std_acc * I3; 

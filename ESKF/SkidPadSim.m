@@ -1,4 +1,4 @@
-function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs] = CircleSim(simtime ,frequency, enable_plots)
+function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs] = SkidPadSim(simtime ,frequency, enable_plots)
 %CIRCLESIM Summary of this function goes here
 %   Radius = 50 [m]
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
@@ -12,27 +12,13 @@ N = simtime/h;
 % Circle data
 R = 10 * sqrt(26);
 v_abs = (2 * pi * R) / 30;
-inclination = 20;
-height = 18.20;
+% inclination = 20;
+% height = 18.20;
 
 g = 9.81;
-t = 0;
-t_count = t;
+t = h;
+count = 1;
 
-
-% seed.Type = 'twister';
-% seed.Seed = 0;
-% seed.State = zeros(625,1)
-% fileID = fopen('working-seed.txt','r');
-% formatSpec = '%d';
-% workingSeed = fscanf(fileID,formatSpec);
-% fclose(fileID);
-% for index=1:625
-%     seed.State = workingSeed;
-% end
-% disp(seed.State);
-
-% seed = rng;
 
 % Allocate data
 time = zeros(1, N);
@@ -55,6 +41,7 @@ roll = deg2rad * -20;
 pitch = deg2rad * 0;
 yaw = deg2rad * 0;
 q_nb = euler2q(roll, pitch, yaw);
+q_nb = q_nb / norm(q_nb);
 % q_nb = [1 0 0 0]';
 
 % Bias
@@ -83,6 +70,15 @@ g_n_nb = [0 0 g]';
 for k = 1:N
     
     time(k) = t;
+    modulo = mod(round(t,5),15); 
+    if (modulo == 0)
+        count = count + 1;
+        if ( count == 2 )
+            omega_b_nb = -omega_b_nb;
+            a_b_nb = -a_b_nb;
+            count = 0; 
+        end
+    end
     p_n_nb_data(:,k) = p_n_nb;
     v_n_nb_data(:,k) = v_n_nb;
 %     att_n_nb_data(:,k) = att_n_nb;
@@ -116,11 +112,12 @@ for k = 1:N
 %     att_n_nb = att_n_nb + (h * omega_b_imu);
 %     att_n_nb = ssa(att_n_nb,'rad'); 
     q_nb = quatprod(q_nb,q_omega);
+    q_nb = q_nb / norm(q_nb);
     bacc_b_nb = acc_bias + 0.001 * wgn(3, 1, 1);
     bars_b_nb = ars_bias + 0.00005 * wgn(3, 1, 1);
 
     t = t + h;
-    t_count = t_count + h;
+%     t_count = t_count + h;
     
 %     alpha = alpha + (pi/(15*h));
 %     [ax_b_nb, ay_b_nb, az_b_nb] = trueBodyAccel(alpha, inclination);
@@ -207,20 +204,20 @@ if (enable_plots)
 %     figure(gcf);
 %     subplot(3, 1, 1)
 %     hold on;
-%     plot(time, rad2deg*att_n_nb_data(1,:), 'Color', 'black', 'Linewidth', 1.5);
+%     plot(time, rad2deg*q2euler(q_nb_data(1,:)), 'Color', 'black', 'Linewidth', 1.5);
 %     ylabel('Roll [m]')
 %     legend('True');
 %     title('Attitude');
 % 
 %     subplot(3, 1, 2)
 %     hold on;
-%     plot(time, rad2deg*att_n_nb_data(2,:), 'Color', 'black', 'Linewidth', 1.5);
+%     plot(time, rad2deg*q2euler(q_nb_data(2,:)), 'Color', 'black', 'Linewidth', 1.5);
 %     ylabel('Pitch [m]')
 %     legend('True');
 % 
 %     subplot(3, 1, 3)
 %     hold on;
-%     plot(time, rad2deg*att_n_nb_data(3,:), 'Color', 'black', 'Linewidth', 1.5);
+%     plot(time, rad2deg*q2euler(q_nb_data(3,:)), 'Color', 'black', 'Linewidth', 1.5);
 %     xlabel('Time [s]');
 %     ylabel('Yaw [m]')
 %     legend('True');
@@ -236,5 +233,3 @@ if (enable_plots)
 end
     
 end
-
-
