@@ -25,7 +25,9 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_
         R_att = std_att^2*I3;
         std_vel = 1;
         R_vel = std_vel^2*I3;
-        R = blkdiag(R_pos, R_pos, std_vel^2);
+        std_acc = 0.5;
+        R_acc = std_acc^2*I3;
+        R = blkdiag(R_pos, R_pos, std_vel^2, 2*R_pos);
 %         R = blkdiag(R_pos , R_pos);
 
 
@@ -93,10 +95,12 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_
           
           
           
-          H = [        I3         Z3          Z3  -R_nb_hat*Smtrx(r_b_1)          Z3       Z3   % gnss_1
-                       I3         Z3          Z3  -R_nb_hat*Smtrx(r_b_2)          Z3       Z3   % gnss_2
-                H_gss_pos  H_gss_vel  H_gss_bacc               H_gss_att  H_gss_bars  H_gss_g]; % ground speed
+          H = [        I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_1)          Z3       Z3   % gnss_1
+                       I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_2)          Z3       Z3   % gnss_2
+                H_gss_pos  H_gss_vel  H_gss_bacc                     H_gss_att  H_gss_bars  H_gss_g % ground speed
 %                        Z3         Z3          Z3                      I3          Z3       Z3]; % delta_theta
+                       Z3         Z3          Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)          Z3       Z3];   % baseline
+%                        Z3         Z3          I3     Smtrx(R_nb_hat' * g_n_nb)          Z3       Z3]; % acc
                
 %          M = rref(obsv(A,H))  
          rank(obsv(A,H))

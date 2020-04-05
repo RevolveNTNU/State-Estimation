@@ -8,7 +8,7 @@ rad2deg = 180/pi;
 Z3 = zeros(3,3);
 I3 = eye(3);
 
-simtime = 300;
+simtime = 60;
 f_samp  = 100;          %imu frequency
 f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time
@@ -55,7 +55,9 @@ ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, ome
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
+% x_ins(1:3) = p_n_nb(:,1);
 x_ins(4:6) = [0;0;0]; % for testing av ESKF
+% x_ins(4:6) = v_n_nb(:,1);
 x_ins(10:13) = [1 0 0 0]'; % for testing av ESKF
 % x_ins(4:6) = [v_abs;0;0]; % korrekt initialisering. For testing av INS
 
@@ -115,40 +117,52 @@ for k = 1:N
         
         % noisy measurements
         p_n_nb(1:3,k) = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
-%         q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
-%         
-%         q_conj = quatconj(q_n_ins')';
-%         delta_q = quatprod(q_conj, q_meas);
-%         delta_theta = 2*delta_q(2:4);
+        q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
+        
+        q_conj = quatconj(q_n_ins')';
+        delta_q = quatprod(q_conj, q_meas);
+        delta_theta = 2*delta_q(2:4);
         
 %         p_gnss_1 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_1 - Smtrx(R_nb_ins*r_b_1)*delta_theta;
 %         p_gnss_2 = p_n_nb(1:3,k) + I3*R_nb_ins*r_b_2 - Smtrx(R_nb_ins*r_b_2)*delta_theta;
         
-        % dual gnss position meas
+        % Dual gnss position meas
         R_nb_t = Rquat(q_nb(1:4,k)');
         p_gnss_1 = p_n_nb(1:3,k) + R_nb_t * r_b_1;
         p_gnss_2 = p_n_nb(1:3,k) + R_nb_t * r_b_2;
 %         p_gnss_3 = p_n_nb(1:3,k) + R_nb_t * r_b_3;
 
-        % corresponding position estimates
+        % --> corresponding position estimates
         p_hat_1 = p_n_ins + R_nb_ins * r_b_1;
         p_hat_2 = p_n_ins + R_nb_ins * r_b_2;
 %         p_hat_3 = p_n_ins + R_nb_ins * r_b_3;
         
-        % ground speed velocity meas
+
+        % Ground speed velocity meas
         H_gss_alloc = [1 0 0; 0 1 0; 0 0 0];
         v_gss = H_gss_alloc*( R_nb_ins'*v_n_nb(1:3,k) + Smtrx( omega_b_imu(:,k) - bars_b_nb)*r_b_3 );
         v_gss = norm( v_gss );
 
-        % corresponding velocity estimates
+        % --> corresponding velocity estimates
         v_hat = R_nb_ins' * v_n_ins - r_b_3(3)*(bars_b_ins(2) - omega_b_imu(2,k)) + r_b_3(2)*(bars_b_ins(3) - omega_b_imu(3,k));
         v_hat = norm(v_hat);
+        
+        
+        % Moving baseline
+        bl = R_nb_t * (r_b_2 - r_b_1);
+        bl_hat = R_nb_ins * (r_b_2 - r_b_1);
+        
+        % Stand-still acceleration
+        f_imu = -(R_nb_t)' * g_n_nb + bacc_b_nb(1:3,k);
+        f_hat = -(R_nb_ins)' * g_n_nb + bacc_b_ins;
+        
+        
         
         % compute difference 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1); (p_gnss_2 - p_hat_2)];
-        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat)];
+        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat)];
         
         % compute error state with ESKF
         [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_nb, x_ins);
@@ -365,8 +379,8 @@ grid on;
 
 subplot(3, 1, 3)
 hold on;
-plot(time, rad2deg*ins_data(12,:), 'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+plot(time, rad2deg*ins_data(12,:),'.', 'Color', [1,165/255, 0], 'Linewidth', 2);
+plot(time, rad2deg*att_n_nb(3,:),'.', 'Color', 'black', 'Linewidth', 1.5);
 xlabel('Time [s]');
 ylabel('Yaw angle [deg]')
 legend('Est', 'True');
@@ -545,11 +559,14 @@ saveas(gcf,'results/GravityErrorState.jpeg')
 % Position map
 figure(14)
 figure(gcf)
-subplot(1, 1, 1)
+hold on;
 plot(p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
 plot(ins_data(2,:), ins_data(1,:), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
+% plot(p_n_nb(2,10*f_samp:end), p_n_nb(1,10*f_samp:end), 'Color', 'black', 'Linewidth', 1.5);
+% plot(ins_data(2,10*f_samp:end), ins_data(1,10*f_samp:end), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
 xlabel('Y position [m]');
 ylabel('X position [m]');
 title('Position Plot');
+legend('True', 'Estimated');
 grid on;
 saveas(gcf,'results/PositionMap.jpeg')

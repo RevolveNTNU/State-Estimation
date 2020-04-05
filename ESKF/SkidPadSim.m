@@ -9,15 +9,17 @@ deg2rad = pi/180;
 h = 1/frequency;
 N = simtime/h;
 
+t_goal = 5.5;
+
 % Circle data
-R = 10 * sqrt(26);
-v_abs = (2 * pi * R) / 30;
+R = 9.125;
+v_abs = (2 * pi * R) / t_goal;
 % inclination = 20;
 % height = 18.20;
 
 g = 9.81;
-t = h;
-count = 1;
+t = 0;
+count = 0;
 
 
 % Allocate data
@@ -33,11 +35,11 @@ omega_b_imu_data = zeros(3,N);
 
 
 % Initialize
-p_n_nb = [0 0 18.20]';
-v_n_nb = [v_abs 0 0]';
+p_n_nb = [0 0 0]';
+v_n_nb = [0 0 0]';
 % att_n_nb = [0 0 0]';
 
-roll = deg2rad * -20;
+roll = deg2rad * 10;
 pitch = deg2rad * 0;
 yaw = deg2rad * 0;
 q_nb = euler2q(roll, pitch, yaw);
@@ -62,18 +64,39 @@ v_b_nb = [0 0 0]';
 % roll_rate = deg2rad * 11.31*cos(alpha);
 % yaw_rate = pi/15;
 % omega_b_nb = [pitch_rate roll_rate yaw_rate]';
-omega_b_nb = [0 0 pi/15]';
-a_b_nb = [0 (v_abs^2)/R 0]';
+
+% omega_b_nb = [0 0 pi/(5.5/2)]';
+% a_b_nb = [0 (v_abs^2)/R 0]';
+
+omega_b_nb = [0 0 0]';
+a_b_nb = [0 0 0]';
+
 g_n_nb = [0 0 g]';
 
+skid_flag = false;
+start = false;
 
 for k = 1:N
     
     time(k) = t;
-    modulo = mod(round(t,5),15); 
-    if (modulo == 0)
+    
+    if (t > t_goal) && (start == false)
+        omega_b_nb = [0 0 0]';
+        a_b_nb = [v_abs/t_goal 0 0]';
+        start = true;
+    end
+    
+    
+    if (t > 2*t_goal) && (skid_flag == false)
+        omega_b_nb = [0 0 pi/(t_goal/2)]';
+        a_b_nb = [0 (v_abs^2)/R 0]';
+        skid_flag = true;
+    end
+    
+    modulo = mod(round(t,5),(t_goal/2)); 
+    if (modulo == 0)&& (skid_flag == true)
         count = count + 1;
-        if ( count == 2 )
+        if ( count == 4 )
             omega_b_nb = -omega_b_nb;
             a_b_nb = -a_b_nb;
             count = 0; 
