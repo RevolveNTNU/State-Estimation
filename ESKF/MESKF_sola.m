@@ -162,7 +162,7 @@ for k = 1:N
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1); (p_gnss_2 - p_hat_2)];
-        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat)];
+        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat); (f_imu - f_hat)];
         
         % compute error state with ESKF
         [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_nb, x_ins);
