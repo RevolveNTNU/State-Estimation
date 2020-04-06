@@ -51,7 +51,7 @@ omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
 E_prev = zeros(18,12);
-ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
+ErrorStateKalman_sola(0,r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -67,11 +67,17 @@ C_ins = [I3 Z3 Z3 Z3 Z3
      
      
 count = 10;
+race_started = false;
 
 for k = 1:N
    t = k * h;
    time_data(k) = t;
    g_err_data(1:3,k) = g_n_nb;
+   
+   if ((p_n_nb(1,k) - p_n_nb(1,1)) > 0.001) && (race_started == false)
+       race_started = true
+       disp(t);
+   end
    
    % split state vector
    p_n_ins = x_ins(1:3);
@@ -162,10 +168,14 @@ for k = 1:N
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1); (p_gnss_2 - p_hat_2)];
-        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat); (f_imu - f_hat)];
+        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat)];
+        
+        if (race_started == false)
+            delta_y = [delta_y ; (f_imu - f_hat)];
+        end
         
         % compute error state with ESKF
-        [delta_x, E_prev] = ErrorStateKalman_sola(r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_nb, x_ins);
+        [delta_x, E_prev] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_nb, x_ins);
        
         % inject error state into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);

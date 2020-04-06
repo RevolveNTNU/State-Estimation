@@ -1,4 +1,4 @@
-function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
+function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
     
     deg2rad = pi/180;   
     
@@ -16,7 +16,7 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_
     q_n_ins = x_n_ins(10:13);
     q_n_ins = q_n_ins/norm(q_n_ins);
     bars_b_ins = x_n_ins(14:16);
-
+        
     persistent P_hat Q R  
     if init
         std_pos = 2;
@@ -101,9 +101,17 @@ function [delta_x, E] = ErrorStateKalman_sola(r_b_1, r_b_2, r_b_3, E_prev,delta_
 %                        Z3         Z3          Z3                      I3          Z3       Z3]; % delta_theta
                        Z3         Z3          Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)          Z3          Z3   % baseline
                        Z3         Z3          I3     -Smtrx(R_nb_hat' * g_n_nb)          Z3  -R_nb_hat']; % acc
+                   
+          if (race_started == true)
+             H = H(1:end-3, :);
+             if (size(R,1) == 13)
+                R = R(1:end-3, 1:end-3);
+             end
+          end
+              
                
 %          M = rref(obsv(A,H))  
-         rank(obsv(A,H))
+         rank(obsv(A,H));
 
           
          % Discrete-time model
