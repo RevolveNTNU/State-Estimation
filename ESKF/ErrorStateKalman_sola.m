@@ -57,21 +57,27 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
        delta_x = 0;
        
     else
-%             
-%           A = [  Z3    I3        Z3                                   Z3       Z3    Z3    % dp
-%                  Z3    Z3     -R_nb    -R_nb*Smtrx(f_b_imu - bacc_b_ins)       Z3    I3    % dv
-%                  Z3    Z3        Z3                                   Z3       Z3    Z3    % dbacc
-%                  Z3    Z3        Z3      -Smtrx(omega_b_imu - bars_b_ins)     -I3    Z3    % dtheta
-%                  Z3    Z3        Z3                                   Z3       Z3    Z3    % dbars
-%                  Z3    Z3        Z3                                   Z3       Z3    Z3] ; % dg
-            
-          A = [  Z3    I3            Z3                                       Z3           Z3  Z3   % dp
-                 Z3    Z3     -R_nb_hat    -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)           Z3  I3   % dv
-                 Z3    Z3  -(1/Tacc)*I3                                       Z3           Z3  Z3   % dbacc
-                 Z3    Z3            Z3         -Smtrx(omega_b_imu - bars_b_ins)          -I3  Z3   % dtheta
-                 Z3    Z3            Z3                                       Z3 -(1/Tars)*I3  Z3   % dbars
-                 Z3    Z3            Z3                                       Z3           Z3  Z3]; % dg
-             
+          A_dp = [Z3  I3  Z3  Z3  Z3  Z3];
+          A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3  I3];
+          A_dbacc = [Z3  Z3  -(1/Tacc)*I3  Z3  Z3  Z3];
+          A_dtheta = [Z3  Z3  Z3  -Smtrx(omega_b_imu - bars_b_ins)  -I3  Z3];
+          A_dbars = [Z3  Z3  Z3  Z3  -(1/Tars)*I3  Z3];
+          A_dg = [Z3  Z3  Z3  Z3  Z3  Z3];
+          
+          if (~race_started)
+              % Do not estimate 
+              A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3  Z3];
+          end
+          
+          A =  [A_dp ; A_dv ; A_dbacc ; A_dtheta ; A_dbars ; A_dg];
+          
+%           A = [  Z3    I3            Z3                                       Z3           Z3  Z3   % dp
+%                  Z3    Z3     -R_nb_hat    -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)           Z3  I3   % dv
+%                  Z3    Z3  -(1/Tacc)*I3                                       Z3           Z3  Z3   % dbacc
+%                  Z3    Z3            Z3         -Smtrx(omega_b_imu - bars_b_ins)          -I3  Z3   % dtheta
+%                  Z3    Z3            Z3                                       Z3 -(1/Tars)*I3  Z3   % dbars
+%                  Z3    Z3            Z3                                       Z3           Z3  Z3]; % dg
+%              
             
  
           E = [        Z3      Z3    Z3   Z3
@@ -85,6 +91,14 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
 %           H = [ I3 Z3 Z3 Z3 Z3 Z3
 %                 I3 Z3 Z3 I3 Z3 Z3];
 
+          H_gnss1 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_1)  Z3  Z3];
+          
+          H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3  Z3];
+          
+          H_vec = [Z3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)  Z3  Z3];
+          
+          H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
+
           % Ground Speed           
           H_gss_pos = [ 0, 0, 0];
           H_gss_vel = [(R_nb_hat(1,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,1)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(2,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(3,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(2,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)];
@@ -93,7 +107,15 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
           H_gss_bars = [(r_b_3(3)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(1)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) - r_b_3(2)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)]; 
           H_gss_g = [0, 0, 0];
           
+          H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars  H_gss_g];
           
+%           if (~race_started)
+%             H_gss = zeros(1,18);
+%           end
+          
+          H = [H_gnss1 ; H_gnss2 ; H_vec ; H_acc ; H_gss];
+          
+    
           
           H = [        I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_1)          Z3          Z3   % gnss_1
                        I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_2)          Z3          Z3   % gnss_2
@@ -102,12 +124,12 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
                        Z3         Z3          Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)          Z3          Z3   % baseline
                        Z3         Z3          I3     -Smtrx(R_nb_hat' * g_n_nb)          Z3  -R_nb_hat']; % acc
                    
-          if (race_started == true)
-             H = H(1:end-3, :);
-             if (size(R,1) == 13)
-                R = R(1:end-3, 1:end-3);
-             end
-          end
+%           if (race_started == true)
+%              H = H(1:end-3, :);
+%              if (size(R,1) == 13)
+%                 R = R(1:end-3, 1:end-3);
+%              end
+%           end
               
                
 %          M = rref(obsv(A,H))  
