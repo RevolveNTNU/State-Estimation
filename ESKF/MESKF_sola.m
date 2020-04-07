@@ -65,6 +65,7 @@ x_ins(10:13) = [1 0 0 0]'; % for testing av ESKF
 C_ins = [I3 Z3 Z3 Z3 Z3
          Z3 Z3 Z3 I3 Z3];
      
+g_n_hat = g_n_nb;
      
 count = 10;
 race_started = false;
@@ -72,7 +73,7 @@ race_started = false;
 for k = 1:N
    t = k * h;
    time_data(k) = t;
-   g_err_data(1:3,k) = g_n_nb;
+   g_err_data(1:3,k) = g_n_hat;
    
    if ((p_n_nb(1,k) - p_n_nb(1,1)) > 0.001) && (race_started == false)
        race_started = true
@@ -99,7 +100,7 @@ for k = 1:N
    att_n_nb(1:3,k) = [phi_t theta_t psi_t]';
    
    % compute acceleration and angular rate
-   a_n_ins = R_nb_ins*(f_b_imu(:,k) - bacc_b_ins) + g_n_nb;
+   a_n_ins = R_nb_ins*(f_b_imu(:,k) - bacc_b_ins) + g_n_hat;
    omega_b_ins = omega_b_imu(:,k) - bars_b_ins;
    
    % compute quaternion from angular rates 
@@ -160,7 +161,7 @@ for k = 1:N
         
         % Stand-still acceleration
         f_imu = -(R_nb_t)' * g_n_nb + bacc_b_nb(1:3,k);
-        f_hat = -(R_nb_ins)' * g_n_nb + bacc_b_ins;
+        f_hat = -(R_nb_ins)' * g_n_hat + bacc_b_ins;
         
         
         
@@ -175,12 +176,12 @@ for k = 1:N
         end
         
         % compute error state with ESKF
-        [delta_x, E_prev] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_nb, x_ins);
+        [delta_x, E_prev] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_hat, x_ins);
        
         % inject error state into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
-        g_n_nb = g_n_nb + delta_x(16:18);
+        g_n_hat = g_n_hat + delta_x(16:18);
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);
