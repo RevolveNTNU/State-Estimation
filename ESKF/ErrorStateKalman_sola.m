@@ -97,7 +97,7 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
           
           H_vec = [Z3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)  Z3  Z3];
           
-          H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
+          H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
           % Ground Speed           
           H_gss_pos = [ 0, 0, 0];
@@ -109,21 +109,22 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
           
           H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars  H_gss_g];
           
-%           if (~race_started)
-%             H_gss = zeros(1,18);
-%           end
+          if (~race_started)
+            H_gss = zeros(1,18);
+            H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
+          end
           
-          H = [H_gnss1 ; H_gnss2 ; H_vec ; H_acc ; H_gss];
+          H = [H_gnss1 ; H_gnss2 ; H_gss ; H_vec ; H_acc];
           
     
-          
-          H = [        I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_1)          Z3          Z3   % gnss_1
-                       I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_2)          Z3          Z3   % gnss_2
-                H_gss_pos  H_gss_vel  H_gss_bacc                     H_gss_att  H_gss_bars     H_gss_g % ground speed
-%                        Z3         Z3          Z3                      I3          Z3       Z3]; % delta_theta
-                       Z3         Z3          Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)          Z3          Z3   % baseline
-                       Z3         Z3          I3     -Smtrx(R_nb_hat' * g_n_nb)          Z3  -R_nb_hat']; % acc
-                   
+%           
+%           H = [        I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_1)          Z3          Z3   % gnss_1
+%                        I3         Z3          Z3        -R_nb_hat*Smtrx(r_b_2)          Z3          Z3   % gnss_2
+%                 H_gss_pos  H_gss_vel  H_gss_bacc                     H_gss_att  H_gss_bars     H_gss_g % ground speed
+% %                        Z3         Z3          Z3                      I3          Z3       Z3]; % delta_theta
+%                        Z3         Z3          Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)          Z3          Z3   % baseline
+%                        Z3         Z3          I3     -Smtrx(R_nb_hat' * g_n_nb)          Z3  -R_nb_hat']; % acc
+%                    
 %           if (race_started == true)
 %              H = H(1:end-3, :);
 %              if (size(R,1) == 13)
@@ -137,7 +138,13 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
 
           
          % Discrete-time model
-         Ad = eye(18) + h * A;
+         
+         if (~race_started)
+             Ad = blkdiag(I3,I3,I3,I3,I3,Z3) + h * A;
+         else
+             Ad = eye(18) + h * A;
+         end
+
         
          % KF gain
          K = P_hat * H' / (H * P_hat * H' + R);

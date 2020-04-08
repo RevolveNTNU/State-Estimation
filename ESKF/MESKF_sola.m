@@ -8,7 +8,7 @@ rad2deg = 180/pi;
 Z3 = zeros(3,3);
 I3 = eye(3);
 
-simtime = 60;
+simtime = 250;
 f_samp  = 100;          %imu frequency
 f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time
@@ -124,7 +124,7 @@ for k = 1:N
         count = 0;
         
         % noisy measurements
-        p_n_nb(1:3,k) = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
+        p_meas(1:3,k) = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
         q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
         
         q_conj = quatconj(q_n_ins')';
@@ -161,7 +161,7 @@ for k = 1:N
         bl_hat = R_nb_ins * (r_b_2 - r_b_1);
         
         % Stand-still acceleration
-        f_imu = -(R_nb_t)' * g_n_nb + bacc_b_nb(1:3,k);
+        f_imu = -(R_nb_t)' * g_n_nb + bacc_b_nb(:,k);
         f_hat = -(R_nb_ins)' * g_n_hat + bacc_b_ins;
         
         
@@ -170,7 +170,7 @@ for k = 1:N
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); (p_gnss_3 - p_hat_3); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1); (p_gnss_2 - p_hat_2)];
-        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat); (f_imu - f_hat)];
+        delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2) ; (v_gss - v_hat) ; (bl - bl_hat) ; (f_imu - f_hat)];
         
 %         if (race_started == false)
 %             delta_y = [delta_y ; (f_imu - f_hat)];
@@ -179,6 +179,8 @@ for k = 1:N
         % compute error state with ESKF
         [delta_x, E_prev] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_hat, x_ins);
        
+        disp(delta_x);
+        
         % inject error state into nominal state
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
