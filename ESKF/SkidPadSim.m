@@ -136,8 +136,8 @@ for k = 1:N
 %     att_n_nb = ssa(att_n_nb,'rad'); 
     q_nb = quatprod(q_nb,q_omega);
     q_nb = q_nb / norm(q_nb);
-    bacc_b_nb = acc_bias + 0.001 * wgn(3, 1, 1);
-    bars_b_nb = ars_bias + 0.00005 * wgn(3, 1, 1);
+    bacc_b_nb = acc_bias; % + 0.001 * wgn(3, 1, 1);
+    bars_b_nb = ars_bias; % + 0.00005 * wgn(3, 1, 1);
 
     t = t + h;
 %     t_count = t_count + h;
