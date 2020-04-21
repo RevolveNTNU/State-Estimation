@@ -43,7 +43,7 @@ g_err_data = zeros(3,N);
 
 % dual gnss config
 r_b_1 = [0.5 0.5 0.5]';
-r_b_2 = [-0.5 -0.2 0.3]';
+r_b_2 = [-0.5 -0.2 0]';
 r_b_3 = [0.5 -0.4 0.1]'; 
 
 %initialization of kalman filter
@@ -52,7 +52,7 @@ omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
 E_prev = zeros(18,12);
-ErrorStateKalman_sola(0,r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
+ErrorStateKalman_sola(0,0,r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -102,6 +102,7 @@ for k = 1:N
    
    % compute acceleration and angular rate
    a_n_ins = R_nb_ins*(f_b_imu(:,k) - bacc_b_ins) + g_n_hat;
+   f_b_ins = Smtrx(omega_b_imu(:,k) - bars_b_ins) * R_nb_ins' ;
    omega_b_ins = omega_b_imu(:,k) - bars_b_ins;
    
    % compute quaternion from angular rates 
@@ -171,14 +172,15 @@ for k = 1:N
 %         delta_y = [(p_gnss_1 - p_hat_1) ; (p_gnss_2 - p_hat_2); delta_theta]; 
 %         delta_y = [(p_gnss_1 - p_hat_1); (p_gnss_2 - p_hat_2)];
 %         delta_y = [(y_gnss1 - y_gnss1_hat) ; (y_gnss2 - y_gnss2_hat) ; (y_gss - y_gss_hat) ; (y_vec - y_vec_hat) ; (y_acc - y_acc_hat)];
-        delta_y = [(y_gnss1 - y_gnss1_hat) ; (y_gnss2 - y_gnss2_hat) ; (y_gss - y_gss_hat) ; (y_acc - y_acc_hat)];
+        
+        delta_y = [(y_gnss1 - y_gnss1_hat) ; (y_gnss2 - y_gnss2_hat) ; (y_gss - y_gss_hat) ; (y_vec - y_vec_hat)];
         
 %         if (race_started == false)
 %             delta_y = [delta_y ; (f_imu - f_hat)];
 %         end
         
         % compute error state with ESKF
-        [delta_x, E_prev] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_hat, x_ins);
+        [delta_x, E_prev] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_hat, x_ins);
        
 %         disp(delta_x);
         
@@ -229,7 +231,7 @@ plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z position [m]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_vec-acc/Position.jpeg')
+saveas(gcf,'results_gnss-vec/Position.jpeg')
 
 % POSITION ERROR
 figure(2)
@@ -255,7 +257,7 @@ plot(time, p_n_nb(3,:) - ins_data(3,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Line
 ylabel('Z position [m]')
 legend('Error');
 grid on;
-saveas(gcf,'results_vec-acc/PositionError.jpeg')
+saveas(gcf,'results_gnss-vec/PositionError.jpeg')
 
 
 % VELOCITIES
@@ -285,7 +287,7 @@ plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z velocity [m]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_vec-acc/Velocity.jpeg')
+saveas(gcf,'results_gnss-vec/Velocity.jpeg')
 
 % VELOCITY ERROR
 figure(4)
@@ -311,7 +313,7 @@ plot(time, v_n_nb(3,:) - ins_data(6,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Line
 ylabel('Z velocity [m/s]')
 legend('Error');
 grid on;
-saveas(gcf,'results_vec-acc/VelocityError.jpeg')
+saveas(gcf,'results_gnss-vec/VelocityError.jpeg')
 
 
 
@@ -342,7 +344,7 @@ plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z acc bias [deg]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_vec-acc/AccelBiast.jpeg')
+saveas(gcf,'results_gnss-vec/AccelBiast.jpeg')
 
 
 % ACCEL BIAS ERROR
@@ -369,7 +371,7 @@ plot(time, bacc_b_nb(3,:) - ins_data(9,:) ,'Color', [0.6350, 0.0780, 0.1840], 'L
 ylabel('Z accel bias [m/s^2]')
 legend('Error');
 grid on;
-saveas(gcf,'results_vec-acc/AccelBiasError.jpeg')
+saveas(gcf,'results_gnss-vec/AccelBiasError.jpeg')
 
 
 
@@ -401,7 +403,7 @@ xlabel('Time [s]');
 ylabel('Yaw angle [deg]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_vec-acc/Attitude.jpeg')
+saveas(gcf,'results_gnss-vec/Attitude.jpeg')
 
 
 % ATTITUDE ERROR
@@ -428,7 +430,7 @@ plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [
 ylabel('Yaw angle [deg]')
 legend('Error');
 grid on;
-saveas(gcf,'results_vec-acc/AttitudeError.jpeg')
+saveas(gcf,'results_gnss-vec/AttitudeError.jpeg')
 
 
 
@@ -459,7 +461,7 @@ plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Yaw bias [deg/s]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_vec-acc/GyroBias.jpeg')
+saveas(gcf,'results_gnss-vec/GyroBias.jpeg')
 
 % GYRA BIAS ERROR
 figure(10)
@@ -485,7 +487,7 @@ plot(time, rad2deg*(bars_b_nb(3,:) - ins_data(15,:)) ,'Color', [0.6350, 0.0780, 
 ylabel('Yaw bias [deg/s]')
 legend('Error');
 grid on;
-saveas(gcf,'results_vec-acc/GyroBiasError.jpeg')
+saveas(gcf,'results_gnss-vec/GyroBiasError.jpeg')
 
 
 % % Accelerometer input
@@ -570,7 +572,7 @@ ylabel('gravity err Z [m/s^2]')
 legend('Estimated');
 grid on;
 
-saveas(gcf,'results_vec-acc/GravityErrorState.jpeg')
+saveas(gcf,'results_gnss-vec/GravityErrorState.jpeg')
 
 % Position map
 figure(14)
@@ -585,4 +587,4 @@ ylabel('X position [m]');
 title('Position Plot');
 legend('True', 'Estimated');
 grid on;
-saveas(gcf,'results_vec-acc/PositionMap.jpeg')
+saveas(gcf,'results_gnss-vec/PositionMap.jpeg')

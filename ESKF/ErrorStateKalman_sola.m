@@ -1,4 +1,4 @@
-function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
+function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
     
     deg2rad = pi/180;   
     
@@ -21,11 +21,11 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
     if init
         std_pos = 2;
         R_pos = std_pos^2*I3;
-        std_att = 10 * deg2rad;
+        std_att = 1 * deg2rad;
         R_att = std_att^2*I3;
         std_vel = 1;
         R_vel = std_vel^2*I3;
-        std_acc = 0.5;
+        std_acc = 1;
         R_acc = std_acc^2*I3;
         R = blkdiag(R_pos , R_pos, std_vel^2, 2*R_pos, R_acc);
 %         R = blkdiag(R_pos , R_pos);
@@ -103,7 +103,7 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
           
           H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3  Z3];
           
-          H_vec = [Z3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)  Z3  Z3];
+          H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3  Z3];
           
           H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
