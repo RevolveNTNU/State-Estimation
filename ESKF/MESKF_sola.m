@@ -37,7 +37,7 @@ att_n_nb = zeros(3, N);
 g_err_data = zeros(3,N);
 
 % from sim
-[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs] = SkidPadSim(simtime,f_samp,0);
+[p_n_nb, v_n_nb, q_nb, bacc_b_nb, bars_b_nb, f_b_imu, omega_b_imu,time, g_n_nb, v_abs, acc_std, ars_std] = SkidPadSim(simtime,f_samp,0);
 % [p_n_nb, v_n_nb, att_n_nb, f_b_imu, w_b_imu,time] = StandStillSim(simtime,f_samp,0);
 
 
@@ -125,8 +125,8 @@ for k = 1:N
         count = 0;
         
         % noisy measurements
-        p_meas(1:3,k) = p_n_nb(1:3,k) +  0.001 * wgn(3, 1, 1);
-        q_meas = q_nb(1:4,k) + 0.00005 * wgn(4, 1, 1);
+        p_meas(1:3,k) = p_n_nb(1:3,k) +  0.001 * randn(3, 1);
+        q_meas = q_nb(1:4,k) + (2 * deg2rad) * randn(4, 1);
         
         q_conj = quatconj(q_n_ins')';
         delta_q = quatprod(q_conj, q_meas);

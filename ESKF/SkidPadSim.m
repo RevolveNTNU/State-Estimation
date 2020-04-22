@@ -1,4 +1,4 @@
-function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs] = SkidPadSim(simtime ,frequency, enable_plots)
+function [p_n_nb_data,v_n_nb_data,q_nb_data, bacc_b_nb_data, bars_b_nb_data, f_b_imu_data, omega_b_imu_data,time, g_n_nb, v_abs, acc_std, ars_std] = SkidPadSim(simtime ,frequency, enable_plots)
 %CIRCLESIM Summary of this function goes here
 %   Radius = 50 [m]
 %   Absolute velocity = (2 * pi * R)/30 [m/s] (30 sec per circle)
@@ -49,13 +49,14 @@ q_nb = q_nb / norm(q_nb);
 % Bias
 acc_bias = [-0.4 -0.5 0.3]';
 ars_bias = [-.030 0.02 -.02]';
+acc_bias_std = (0.04 * 0.001 * 9.80665) * sqrt(h);
+ars_bias_std = ((10 * deg2rad) / 3600) * sqrt(h);
 bacc_b_nb = acc_bias;
 bars_b_nb = ars_bias;
 
-% Standard dviations (for computation of noise)
-acc_std = 0.05;
-ars_std = deg2rad * 2; 
-
+% Standard deviations (for computation of noise)
+acc_std = (0.14 * 0.001 * 9.80665) / sqrt(h);
+ars_std = (0.0035 * deg2rad) / sqrt(h);
 
 v_b_nb = [0 0 0]';
 
@@ -117,10 +118,10 @@ for k = 1:N
 
     [J,R_nb, T_nb] = quatern(q_nb_data(:,k));
 %     rng(working_seed);
-%     acc_noise = acc_std * randn(3,1);
-%     ars_noise = ars_std * randn(3,1);
-    acc_noise = 0.001 * wgn(3, 1, 1);
-    ars_noise = 0.0005 * wgn(3, 1, 1);
+    acc_noise = acc_std * randn(3,1);
+    ars_noise = ars_std * randn(3,1);
+%     acc_noise = 0.001 * wgn(3, 1, 1);
+%     ars_noise = 0.0005 * wgn(3, 1, 1); 
 
     f_b_imu = a_b_nb + Smtrx(omega_b_nb)*v_b_nb - (R_nb')*g_n_nb + bacc_b_nb + acc_noise; 
     omega_b_imu = omega_b_nb + bars_b_nb + ars_noise;
@@ -136,8 +137,8 @@ for k = 1:N
 %     att_n_nb = ssa(att_n_nb,'rad'); 
     q_nb = quatprod(q_nb,q_omega);
     q_nb = q_nb / norm(q_nb);
-    bacc_b_nb = acc_bias; % + 0.001 * wgn(3, 1, 1);
-    bars_b_nb = ars_bias; % + 0.00005 * wgn(3, 1, 1);
+    bacc_b_nb = acc_bias + acc_bias_std * randn(3, 1);
+    bars_b_nb = ars_bias + ars_bias_std * randn(3, 1);
 
     t = t + h;
 %     t_count = t_count + h;

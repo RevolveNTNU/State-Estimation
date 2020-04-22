@@ -1,4 +1,4 @@
-function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
+function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
     
     deg2rad = pi/180;   
     
@@ -21,27 +21,50 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
     if init
         std_pos = 2;
         R_pos = std_pos^2*I3;
-        std_att = 10 * deg2rad;
+        std_att = 1 * deg2rad;
         R_att = std_att^2*I3;
         std_vel = 1;
         R_vel = std_vel^2*I3;
-        std_acc = 0.5;
+        std_acc = 1;
         R_acc = std_acc^2*I3;
-        R = blkdiag(R_pos, R_pos, std_vel^2, 2*R_pos R_acc);
+        R = blkdiag(R_pos , R_pos, std_vel^2, 2*R_pos, R_acc);
 %         R = blkdiag(R_pos , R_pos);
 
 
         std_acc = 0.01 * sqrt(10);
+        %std_acc = 0.14 * 0.001 * 9.80665;
         Q_acc = std_acc * std_acc * I3; 
         std_acc_bias = 1;
+        %std_acc_bias = 0.04 * 0.001 * 9.80665;
         Q_acc_bias = std_acc_bias * std_acc_bias * I3;
 
         std_ars = 0.1;
-        Q_ars = std_ars * std_ars *I3;
+        %std_ars = 0.0035 * deg2rad;
+        Q_ars = std_ars * std_ars * I3;
         std_ars_bias = 0.01 * sqrt(10);
+        %std_ars_bias = 10 * deg2rad;
         Q_ars_bias = std_ars_bias * std_ars_bias * I3;
 
         Q = blkdiag( Q_acc, Q_acc_bias, Q_ars, Q_ars_bias ) * h * h;
+        Q = 100 * Q;
+        
+%         std_acc = 0.01 * sqrt(10);
+%         std_acc = 0.14 * 0.001 * 9.80665;
+%         Q_acc = std_acc * std_acc * h *I3; 
+%         std_acc_bias = 1;
+%         std_acc_bias = 0.04 * 0.001 * 9.80665;
+%         Q_acc_bias = 2 * std_acc_bias * std_acc_bias * h * I3;
+% 
+%         std_ars = 0.1;
+%         std_ars = 0.0035 * deg2rad;
+%         Q_ars = std_ars * std_ars * h * I3;
+%         std_ars_bias = 0.01 * sqrt(10);
+%         std_ars_bias = 10 * deg2rad;
+%         Q_ars_bias = 2 * std_ars_bias * std_ars_bias * h * I3;
+% 
+%         Q = blkdiag( Q_acc, Q_acc_bias, Q_ars, Q_ars_bias ); % * h * h;
+%        
+        
 %         Q = diag([1e-5 * ones(1, 3) 1e-2 * ones(1, 3) 1e-4 * ones(1, 3) 1e-5 * ones(1, 3)]);
       
 %        P_hat = diag([1e-6 * ones(1, 3) 1e-4 * ones(1, 3) 1e-4 * ones(1, 3) 1e-3 * ones(1, 3) 1e-3 * ones(1, 3)]);  % Initial error covariance
@@ -103,7 +126,7 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
           
           H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3  Z3];
           
-          H_vec = [Z3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2-r_b_1)  Z3  Z3];
+          H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3  Z3];
           
           H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
@@ -119,11 +142,11 @@ function [delta_x, E] = ErrorStateKalman_sola(race_started, r_b_1, r_b_2, r_b_3,
           
           if (~race_started)
             H_gss = zeros(1,18);
-            H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
-%             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];    
+%             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
+            H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];    
           end
           
-          H = [H_gnss1 ; H_gnss2 ; H_gss ; H_acc];
+          H = [H_gnss1 ; H_gnss2 ; H_gss ; H_vec ; H_acc];
           
     
 %           
