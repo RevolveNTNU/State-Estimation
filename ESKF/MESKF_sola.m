@@ -52,7 +52,7 @@ omega_b_imu_0 = [0 0 0]';
 bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
 E_prev = zeros(18,12);
-ErrorStateKalman_sola(0,0,r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
+ErrorStateKalman_sola(0,0,0,r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
 
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
@@ -182,7 +182,7 @@ for k = 1:N
 %         f_b_ins = Smtrx(omega_b_imu(:,k) - bars_b_ins) * R_nb_ins' * v_n_ins;
         
         % compute error state with ESKF
-        [delta_x, E_prev] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_hat, x_ins);
+        [delta_x, E_prev] = ErrorStateKalman_sola(t,f_b_ins, race_started, r_b_1, r_b_2,r_b_3, E_prev, delta_y, R_nb_ins, f_low, 0, f_b_imu(:,k), omega_b_imu(:,k), g_n_hat, x_ins);
        
 %         disp(delta_x);
         
@@ -190,7 +190,7 @@ for k = 1:N
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
         g_n_hat = g_n_hat + delta_x(16:18);
-        disp(delta_x(16:18));
+%         disp(delta_x(16:18));
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);

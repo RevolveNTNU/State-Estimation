@@ -1,4 +1,4 @@
-function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
+function [delta_x, E] = ErrorStateKalman_sola(t,f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,delta_y, R_nb_hat, f_low, init, f_b_imu, omega_b_imu, g_n_nb, x_n_ins)
     
     deg2rad = pi/180;   
     
@@ -122,6 +122,17 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
 %           H = [ I3 Z3 Z3 Z3 Z3 Z3
 %                 I3 Z3 Z3 I3 Z3 Z3];
 
+
+            std_pos = 2;
+            R_pos = std_pos^2*I3;
+            std_att = 1 * deg2rad;
+            R_att = std_att^2*I3;
+            std_vel = 1;
+            R_vel = std_vel^2*I3;
+            std_acc = 1;
+            R_acc = std_acc^2*I3;
+            R = blkdiag(R_pos , R_pos, std_vel^2, 2*R_pos, R_acc);
+
           H_gnss1 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_1)  Z3  Z3];
           
           H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3  Z3];
@@ -142,9 +153,59 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           
           if (~race_started)
             H_gss = zeros(1,18);
+%             R(7,7) = 0;
 %             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
-            H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];    
+            H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];
+%             std_acc = 1;
+%             R_acc = std_acc^2*I3;
+%             R(11:13,11:13) = R_acc;
           end
+%           
+%           
+%           % Outlier Rejection
+%                     
+%           delta_y_gnss1 = delta_y(1:3);
+%           delta_y_gnss2 = delta_y(4:6);
+%           delta_y_gss = delta_y(7);
+%           delta_y_vec = delta_y(8:10);
+%           delta_y_acc = delta_y(11:13);
+%           
+%           R_gnss = R(1:3, 1:3); 
+%           R_gss = R(7,7);
+%           R_vec = R(8:10,8:10);
+%           R_acc = R(11:13,11:13);
+%          
+%           S = H_gnss1 * P_hat * H_gnss1' + R_gnss;
+%           T = delta_y_gnss1' * (S^(-1)) * delta_y_gnss1;
+%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
+%              H_gnss1 = zeros(3,18);
+%           end
+%           
+%           S = H_gnss2 * P_hat * H_gnss2' + R_gnss;
+%           T = delta_y_gnss2' * (S^(-1)) * delta_y_gnss2;
+%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
+%              H_gnss2 = zeros(3,18);
+%           end
+%           
+%           S = H_gss * P_hat * H_gss' + R_gss;
+%           T = delta_y_gss' * (S^(-1)) * delta_y_gss;
+%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
+%              H_gss = zeros(1,18);
+%           end
+%           
+%           S = H_vec * P_hat * H_vec' + R_vec;
+%           T = delta_y_vec' * (S^(-1)) * delta_y_vec;
+%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
+%              H_vec = zeros(3,18);
+%           end
+%           
+%           S = H_acc * P_hat * H_acc' + R_acc;
+%           T = delta_y_acc' * (S^(-1)) * delta_y_acc;
+%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
+%              H_acc = zeros(3,18);
+%           end
+          
+          
           
           H = [H_gnss1 ; H_gnss2 ; H_gss ; H_vec ; H_acc];
           
@@ -175,10 +236,28 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
         
          % KF gain
          K = P_hat * H' / (H * P_hat * H' + R);
+         
+              
+%          % outlier rejection with xi squared test
+%          outlier = false;
+%          
+%          delta_y_gnss1 = delta_y(1:3);
+%          R_pos = R(1:3, 1:3);   
+%          
+%          S = H_gnss1 * P_hat * H_gnss1' + R_pos;
+%          T = delta_y_gnss1' * (S^(-1)) * delta_y_gnss1
+%          if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
+%              outlier = true;
+%          end
+%          
 
          % corrector 
          delta_x = K * delta_y;
          P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+         
+%          if (outlier && (t > 150))
+%              delta_x = zeros(18,1);
+%          end
         
          % ESKF reset
          delta_theta = delta_x(10:12);

@@ -120,6 +120,8 @@ for k = 1:N
 %     rng(working_seed);
     acc_noise = acc_std * randn(3,1);
     ars_noise = ars_std * randn(3,1);
+    acc_noise = zeros(3,1);
+    ars_noise = zeros(3,1);
 %     acc_noise = 0.001 * wgn(3, 1, 1);
 %     ars_noise = 0.0005 * wgn(3, 1, 1); 
 
@@ -138,7 +140,7 @@ for k = 1:N
     q_nb = quatprod(q_nb,q_omega);
     q_nb = q_nb / norm(q_nb);
     bacc_b_nb = acc_bias + acc_bias_std * randn(3, 1);
-    bars_b_nb = ars_bias + ars_bias_std * randn(3, 1);
+    bars_b_nb = ars_bias + ars_bias_std^2 * randn(3, 1);
 
     t = t + h;
 %     t_count = t_count + h;
