@@ -131,7 +131,6 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];              
 %           H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
-          % Ground Speed           
           H_gss_pos = [ 0, 0, 0];
           H_gss_vel = [(R_nb_hat(1,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,1)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(2,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(3,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(2,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)];
           H_gss_bacc = [0, 0, 0]; 
@@ -142,27 +141,36 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars  H_gss_g];
           
           
-          
         std_pos = 2;
-        R_pos = std_pos^2*I3;
+        R_pos1 = std_pos^2*I3;
+        R_pos2 = std_pos^2*I3;
+        R_vec = 20*std_pos^2*I3;
         std_att = 1 * deg2rad;
         R_att = std_att^2*I3;
         std_vel = 1;
-        R_vel = std_vel^2*I3;
+        R_vel = std_vel^2;
         std_acc = 1;
         R_acc = std_acc^2*I3;
-        R = blkdiag(R_pos , R_pos, std_vel^2, 2*R_pos, R_acc);
+        R = blkdiag(R_pos1 , R_pos2, std_vel^2, R_vec, R_acc);
+          
+           % Outlier Rejection
+          [~,H_gnss1] = ChiSquareTest(H_gnss1, P_hat, R_pos1, delta_y(1:3));
+          [~,H_gnss2] = ChiSquareTest(H_gnss2, P_hat, R_pos2, delta_y(4:6));
+          [~,H_gss] = ChiSquareTest(H_gss, P_hat, R_vel, delta_y(7));
+          [~,H_vec] = ChiSquareTest(H_vec, P_hat, R_vec, delta_y(8:10));
+          [~,H_acc] = ChiSquareTest(H_acc, P_hat, R_acc, delta_y(11:13)); 
+          
           
           if (~race_started)
             H = [H_gnss1 ; H_gnss2 ; H_vec ; H_acc];
-            R = blkdiag(R_pos , R_pos, 2*R_pos, R_acc);
+            R = blkdiag(R_pos1 , R_pos2, R_vec, R_acc);
             delta_y(7) = []; % delete gss 
 %             H_gss = zeros(1,18);
 %             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
 %             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];    
           else
             H = [H_gnss1 ; H_gnss2 ; H_gss ; H_vec];
-            R = blkdiag(R_pos , R_pos, std_vel^2, 2*R_pos);
+            R = blkdiag(R_pos1 , R_pos2, R_vel, R_vec);
             delta_y(11:13) = []; % delete acc 
           end 
           

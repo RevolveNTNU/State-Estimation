@@ -158,7 +158,7 @@ for k = 1:N
         
         
         % Moving baseline
-        y_vec = R_nb_t * (r_b_2 - r_b_1);
+        y_vec = R_nb_t * (r_b_2 - r_b_1) + 1*randn(1)*[5,1,1]';
         y_vec_hat = R_nb_ins * (r_b_2 - r_b_1);
         
         % Stand-still acceleration
@@ -190,7 +190,7 @@ for k = 1:N
         x_ins(1:9) = x_ins(1:9) + delta_x(1:9);
         x_ins(14:16) = x_ins(14:16) + delta_x(13:15);
         g_n_hat = g_n_hat + delta_x(16:18);
-        disp(delta_x(16:18));
+%         disp(delta_x(16:18));
         h_low = 1/10;
         q_delta_omega = qbuild(delta_x(10:12)/h_low, h_low);
         x_ins(10:13) = quatprod(x_ins(10:13), q_delta_omega);
@@ -233,7 +233,7 @@ plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z position [m]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_gnss-vec/Position.jpeg')
+saveas(gcf,'results/Position.jpeg')
 
 % POSITION ERROR
 figure(2)
@@ -259,7 +259,7 @@ plot(time, p_n_nb(3,:) - ins_data(3,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Line
 ylabel('Z position [m]')
 legend('Error');
 grid on;
-saveas(gcf,'results_gnss-vec/PositionError.jpeg')
+saveas(gcf,'results/PositionError.jpeg')
 
 
 % VELOCITIES
@@ -289,7 +289,7 @@ plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z velocity [m]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_gnss-vec/Velocity.jpeg')
+saveas(gcf,'results/Velocity.jpeg')
 
 % VELOCITY ERROR
 figure(4)
@@ -315,7 +315,7 @@ plot(time, v_n_nb(3,:) - ins_data(6,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Line
 ylabel('Z velocity [m/s]')
 legend('Error');
 grid on;
-saveas(gcf,'results_gnss-vec/VelocityError.jpeg')
+saveas(gcf,'results/VelocityError.jpeg')
 
 
 
@@ -346,7 +346,7 @@ plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Z acc bias [deg]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_gnss-vec/AccelBiast.jpeg')
+saveas(gcf,'results/AccelBiast.jpeg')
 
 
 % ACCEL BIAS ERROR
@@ -373,7 +373,7 @@ plot(time, bacc_b_nb(3,:) - ins_data(9,:) ,'Color', [0.6350, 0.0780, 0.1840], 'L
 ylabel('Z accel bias [m/s^2]')
 legend('Error');
 grid on;
-saveas(gcf,'results_gnss-vec/AccelBiasError.jpeg')
+saveas(gcf,'results/AccelBiasError.jpeg')
 
 
 
@@ -405,7 +405,7 @@ xlabel('Time [s]');
 ylabel('Yaw angle [deg]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_gnss-vec/Attitude.jpeg')
+saveas(gcf,'results/Attitude.jpeg')
 
 
 % ATTITUDE ERROR
@@ -432,7 +432,7 @@ plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [
 ylabel('Yaw angle [deg]')
 legend('Error');
 grid on;
-saveas(gcf,'results_gnss-vec/AttitudeError.jpeg')
+saveas(gcf,'results/AttitudeError.jpeg')
 
 
 
@@ -463,7 +463,7 @@ plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
 ylabel('Yaw bias [deg/s]')
 legend('Est', 'True');
 grid on;
-saveas(gcf,'results_gnss-vec/GyroBias.jpeg')
+saveas(gcf,'results/GyroBias.jpeg')
 
 % GYRA BIAS ERROR
 figure(10)
@@ -489,7 +489,7 @@ plot(time, rad2deg*(bars_b_nb(3,:) - ins_data(15,:)) ,'Color', [0.6350, 0.0780, 
 ylabel('Yaw bias [deg/s]')
 legend('Error');
 grid on;
-saveas(gcf,'results_gnss-vec/GyroBiasError.jpeg')
+saveas(gcf,'results/GyroBiasError.jpeg')
 
 
 % % Accelerometer input
@@ -574,7 +574,7 @@ ylabel('gravity err Z [m/s^2]')
 legend('Estimated');
 grid on;
 
-saveas(gcf,'results_gnss-vec/GravityErrorState.jpeg')
+saveas(gcf,'results/GravityErrorState.jpeg')
 
 % Position map
 figure(14)
@@ -589,4 +589,4 @@ ylabel('X position [m]');
 title('Position Plot');
 legend('True', 'Estimated');
 grid on;
-saveas(gcf,'results_gnss-vec/PositionMap.jpeg')
+saveas(gcf,'results/PositionMap.jpeg')
