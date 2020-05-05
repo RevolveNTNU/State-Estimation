@@ -128,7 +128,7 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           
           H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3  Z3];
           
-          H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];              
+          H_acc = [Z3  Z3  Z3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];              
 %           H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
           H_gss_pos = [ 0, 0, 0];
@@ -161,18 +161,18 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           [~,H_acc] = ChiSquareTest(H_acc, P_hat, R_acc, delta_y(11:13)); 
           
           
-          if (~race_started)
-            H = [H_gnss1 ; H_gnss2 ; H_vec ; H_acc];
-            R = blkdiag(R_pos1 , R_pos2, R_vec, R_acc);
-            delta_y(7) = []; % delete gss 
-%             H_gss = zeros(1,18);
-%             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
-%             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];    
-          else
-            H = [H_gnss1 ; H_gnss2 ; H_gss ; H_vec];
-            R = blkdiag(R_pos1 , R_pos2, R_vel, R_vec);
-            delta_y(11:13) = []; % delete acc 
-          end 
+%           if (~race_started)
+%             H = [H_gnss1 ; H_gnss2 ; H_vec ; H_acc];
+%             R = blkdiag(R_pos1 , R_pos2, R_vec, R_acc);
+%             delta_y(7) = []; % delete gss 
+% %             H_gss = zeros(1,18);
+% %             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  -R_nb_hat'];
+% %             H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];    
+%           else
+%             H = [H_gnss1 ; H_gnss2 ; H_gss ; H_vec];
+%             R = blkdiag(R_pos1 , R_pos2, R_vel, R_vec);
+%             delta_y(11:13) = []; % delete acc 
+%           end 
           
     
 %           
@@ -192,37 +192,172 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
               
                
 %          M = rref(obsv(A,H))  
-         r = rank(obsv(A,H));
+%          r = rank(obsv(A,H));
 %          if (~race_started)
 %             disp(r); 
 %          end
           
 
+%         
+%          % KF gain
+%          K = P_hat * H' / (H * P_hat * H' + R);
+% 
+%          % corrector 
+%          delta_x = K * delta_y;
+%          P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+%         
+%          % ESKF reset
+%          delta_theta = delta_x(10:12);
+%          G = [ I3 Z3 Z3                            Z3 Z3 Z3 
+%                Z3 I3 Z3                            Z3 Z3 Z3
+%                Z3 Z3 I3                            Z3 Z3 Z3
+%                Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3
+%                Z3 Z3 Z3                            Z3 I3 Z3
+%                Z3 Z3 Z3                            Z3 Z3 I3];
+%            
+%          P_hat = G * P_hat * G';
+%         
+%         
+%         % Covariance predictor (k+1)
+%         Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
+%         P_hat = Ad * P_hat * Ad' + Qd;
+%         P_hat = (P_hat + P_hat')/2;
+%         
         
-         % KF gain
-         K = P_hat * H' / (H * P_hat * H' + R);
-
-         % corrector 
-         delta_x = K * delta_y;
-         P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+        %------------------------------------------------------------%
+        % % % GNSS1
+        [isOutlier,H_gnss1] = ChiSquareTest(H_gnss1, P_hat, R_pos1, delta_y(1:3));
+        if (~isOutlier)
+            
+            H = H_gnss1;
+            R = R_pos1;
+            
+            % KF gain
+            K = P_hat * H' / (H * P_hat * H' + R);
+            
+            % corrector
+            delta_x = K * delta_y(1:3);
+            P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+            
+            % reset
+            P_hat = ESKF_reset(delta_x, P_hat)
+             
+            % covar predictor
+            Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
+            P_hat = Ad * P_hat * Ad' + Qd;
+            P_hat = (P_hat + P_hat')/2;
+        end
         
-         % ESKF reset
-         delta_theta = delta_x(10:12);
-         G = [ I3 Z3 Z3                            Z3 Z3 Z3 
-               Z3 I3 Z3                            Z3 Z3 Z3
-               Z3 Z3 I3                            Z3 Z3 Z3
-               Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3
-               Z3 Z3 Z3                            Z3 I3 Z3
-               Z3 Z3 Z3                            Z3 Z3 I3];
-           
-         P_hat = G * P_hat * G';
+        % % % GNSS2
+        [isOutlier,H_gnss2] = ChiSquareTest(H_gnss2, P_hat, R_pos2, delta_y(4:6));
+        if (~isOutlier)
+            
+            H = H_gnss2;
+            R = R_pos2;
+            
+            % KF gain
+            K = P_hat * H' / (H * P_hat * H' + R);
+            
+            % corrector
+            delta_x = K * delta_y(4:6);
+            P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+            
+            % reset
+            P_hat = ESKF_reset(delta_x, P_hat)
+             
+            % covar predictor
+            Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
+            P_hat = Ad * P_hat * Ad' + Qd;
+            P_hat = (P_hat + P_hat')/2;
+        end
+        
+        % % % GSS
+        [isOutlier,H_gss] = ChiSquareTest(H_gss, P_hat, R_vel, delta_y(7));
+        if (~isOutlier && race_started)
+            
+            H = H_gss;
+            R = R_vel;
+            
+            % KF gain
+            K = P_hat * H' / (H * P_hat * H' + R);
+            
+            % corrector
+            delta_x = K * delta_y(7);
+            P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+            
+            % reset
+            P_hat = ESKF_reset(delta_x, P_hat)
+             
+            % covar predictor
+            Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
+            P_hat = Ad * P_hat * Ad' + Qd;
+            P_hat = (P_hat + P_hat')/2;
+        end
+        
+        % % % VEC
+        [isOutlier,H_vec] = ChiSquareTest(H_vec, P_hat, R_vec, delta_y(8:10));
+        if (~isOutlier)
+            
+            H = H_vec;
+            R = R_vec;
+            
+            % KF gain
+            K = P_hat * H' / (H * P_hat * H' + R);
+            
+            % corrector
+            delta_x = K * delta_y(8:10);
+            P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+            
+            % reset
+            P_hat = ESKF_reset(delta_x, P_hat)
+             
+            % covar predictor
+            Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
+            P_hat = Ad * P_hat * Ad' + Qd;
+            P_hat = (P_hat + P_hat')/2;
+        end
         
         
-        % Covariance predictor (k+1)
-        Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
-        P_hat = Ad * P_hat * Ad' + Qd;
-        P_hat = (P_hat + P_hat')/2;
+        % % % ACC 
+        [isOutlier,H_acc] = ChiSquareTest(H_acc, P_hat, R_acc, delta_y(11:13));
+        if (~isOutlier && ~race_started)
+            
+            H = H_acc;
+            R = R_acc;
+            
+            % KF gain
+            K = P_hat * H' / (H * P_hat * H' + R);
+            
+            % corrector
+            delta_x = K * delta_y(11:13);
+            P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+            
+            % reset
+            P_hat = ESKF_reset(delta_x, P_hat)
+             
+            % covar predictor
+            Qd = 0.5 * (Ad * E_prev * Q * E_prev' * Ad' + E * Q * E') * h;
+            P_hat = Ad * P_hat * Ad' + Qd;
+            P_hat = (P_hat + P_hat')/2;
+        end
 
              
     end
+end
+
+
+function P_hat_reset = ESKF_reset(delta_x, P_hat)
+    
+    Z3 = zeros(3,3);
+    I3 = eye(3); 
+    
+    delta_theta = delta_x(10:12);
+     G = [ I3 Z3 Z3                            Z3 Z3 Z3 
+           Z3 I3 Z3                            Z3 Z3 Z3
+           Z3 Z3 I3                            Z3 Z3 Z3
+           Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3
+           Z3 Z3 Z3                            Z3 I3 Z3
+           Z3 Z3 Z3                            Z3 Z3 I3];
+
+     P_hat_reset = G * P_hat * G';
 end
