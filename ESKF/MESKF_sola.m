@@ -163,7 +163,7 @@ for k = 1:N
         
         % Stand-still acceleration
         y_acc = f_b_imu(:,k); %-(R_nb_t)' * g_n_nb + bacc_b_nb(:,k);
-        y_acc_hat = -(R_nb_ins)' * g_n_hat + bacc_b_ins;
+        y_acc_hat = -(R_nb_ins)' * g_n_hat; % + bacc_b_ins;
         
         
         
