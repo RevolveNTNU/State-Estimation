@@ -204,389 +204,392 @@ for k = 1:N
 end
 
 
-% PLOTS
-      
-% POSITION
-figure(1)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, ins_data(1,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('X position [m]')
-legend('Est', 'True');
-title('Position');
-grid on;
+% % PLOTS
 
-subplot(3, 1, 2)
-hold on;
-plot(time, ins_data(2,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Y position [m]')
-legend('Est', 'True');
-grid on;
+PlotResults;
 
-subplot(3, 1, 3)
-hold on;
-plot(time, ins_data(3,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Z position [m]')
-legend('Est', 'True');
-grid on;
-saveas(gcf,'results/Position.jpeg')
-
-% POSITION ERROR
-figure(2)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, p_n_nb(1,:) - ins_data(1,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X position [m]')
-legend('Est');
-title('Position Error');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, p_n_nb(2,:) - ins_data(2,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Y position [m]')
-legend('Error');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, p_n_nb(3,:) - ins_data(3,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z position [m]')
-legend('Error');
-grid on;
-saveas(gcf,'results/PositionError.jpeg')
-
-
-% VELOCITIES
-figure(3)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, ins_data(4,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('X velocity [m]')
-legend('Est', 'True');
-title('Velocity');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, ins_data(5,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Y velocity [m]')
-legend('Est', 'True');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, ins_data(6,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Z velocity [m]')
-legend('Est', 'True');
-grid on;
-saveas(gcf,'results/Velocity.jpeg')
-
-% VELOCITY ERROR
-figure(4)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, v_n_nb(1,:) - ins_data(4,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X velocity [m/s]')
-legend('Error');
-title('Velocity Error');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, v_n_nb(2,:) - ins_data(5,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Y velocity [m/s]')
-legend('Error');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, v_n_nb(3,:) - ins_data(6,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z velocity [m/s]')
-legend('Error');
-grid on;
-saveas(gcf,'results/VelocityError.jpeg')
-
-
-
-% ACCEL BIAS
-figure(5)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, ins_data(7,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, bacc_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('X acc bias [deg]')
-legend('Est', 'True');
-title('Accelerometer bias');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, ins_data(8,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, bacc_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Y acc bias [deg]')
-legend('Est', 'True');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, ins_data(9,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Z acc bias [deg]')
-legend('Est', 'True');
-grid on;
-saveas(gcf,'results/AccelBiast.jpeg')
-
-
-% ACCEL BIAS ERROR
-figure(6)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, bacc_b_nb(1,:) - ins_data(7,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('X accel bias [m/s^2]')
-legend('Error');
-title('Accelerometer Bias Error');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, bacc_b_nb(2,:) - ins_data(8,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Y accel bias error [m/s^2]')
-legend('Error');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, bacc_b_nb(3,:) - ins_data(9,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Z accel bias [m/s^2]')
-legend('Error');
-grid on;
-saveas(gcf,'results/AccelBiasError.jpeg')
-
-
-
-% ATTITUDE 
-figure(7)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, rad2deg*ins_data(10,:),'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-ylabel('Roll angle [deg]')
-legend('Est', 'True');
-title('Attitude');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, rad2deg*ins_data(11,:), 'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Pitch angle [deg]')
-legend('Est', 'True');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, rad2deg*ins_data(12,:),'.', 'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, rad2deg*att_n_nb(3,:),'.', 'Color', 'black', 'Linewidth', 1.5);
-xlabel('Time [s]');
-ylabel('Yaw angle [deg]')
-legend('Est', 'True');
-grid on;
-saveas(gcf,'results/Attitude.jpeg')
-
-
-% ATTITUDE ERROR
-figure(8)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, ssa(rad2deg*att_n_nb(1,:) - rad2deg*ins_data(10,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Roll angle [deg]')
-legend('Error');
-title('Attitude Error');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, ssa(rad2deg*att_n_nb(2,:) - rad2deg*ins_data(11,:), 'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Pitch angle [deg]')
-legend('Error');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Yaw angle [deg]')
-legend('Error');
-grid on;
-saveas(gcf,'results/AttitudeError.jpeg')
-
-
-
-% GYRO BIAS
-figure(9)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, ins_data(13,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, bars_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Roll bias [deg/s]')
-legend('Est', 'True');
-title('Gyro bias');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, ins_data(14,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, bars_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Pitch bias [deg/s]')
-legend('Est', 'True');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, ins_data(15,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
-plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('Yaw bias [deg/s]')
-legend('Est', 'True');
-grid on;
-saveas(gcf,'results/GyroBias.jpeg')
-
-% GYRA BIAS ERROR
-figure(10)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, rad2deg*(bars_b_nb(1,:) - ins_data(13,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Roll bias [deg/s]')
-legend('Error');
-title('Gyro Bias Error');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, rad2deg*(bars_b_nb(2,:) - ins_data(14,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Pitch bias [deg/s]')
-legend('Error');
-grid on;
-
-subplot(3, 1, 3)
-hold on;
-plot(time, rad2deg*(bars_b_nb(3,:) - ins_data(15,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-ylabel('Yaw bias [deg/s]')
-legend('Error');
-grid on;
-saveas(gcf,'results/GyroBiasError.jpeg')
-
-
-% % Accelerometer input
-% figure(11)
+%       
+% % POSITION
+% figure(1)
 % figure(gcf);
 % subplot(3, 1, 1)
 % hold on;
-% plot(time, f_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
-% ylabel('f_b_imu X [m/s^2]')
-% legend('Measured');
-% title('Accelerometer input');
+% plot(time, ins_data(1,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+% ylabel('X position [m]')
+% legend('Est', 'True');
+% title('Position');
 % grid on;
 % 
 % subplot(3, 1, 2)
 % hold on;
-% plot(time, f_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
-% ylabel('f_b_imu y [m/s^2]')
-% legend('Measured');
+% plot(time, ins_data(2,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Y position [m]')
+% legend('Est', 'True');
 % grid on;
 % 
 % subplot(3, 1, 3)
 % hold on;
-% plot(time, f_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
-% ylabel('f_b_imu Z [m/s^2]')
-% legend('Measured');
+% plot(time, ins_data(3,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Z position [m]')
+% legend('Est', 'True');
 % grid on;
-% % saveas(gcf,'AccelInput.jpeg')
+% saveas(gcf,'results/Position.jpeg')
 % 
-% 
-% 
-% % Gyrometer input
-% figure(12)
+% % POSITION ERROR
+% figure(2)
 % figure(gcf);
 % subplot(3, 1, 1)
 % hold on;
-% plot(time, rad2deg*omega_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
-% ylabel('omega_b_imu X [m/s^2]')
-% legend('Measured');
-% title('Gyrometer input');
+% plot(time, p_n_nb(1,:) - ins_data(1,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('X position [m]')
+% legend('Est');
+% title('Position Error');
 % grid on;
 % 
 % subplot(3, 1, 2)
 % hold on;
-% plot(time, rad2deg*omega_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
-% ylabel('omega_b_imu y [m/s^2]')
-% legend('Measured');
+% plot(time, p_n_nb(2,:) - ins_data(2,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Y position [m]')
+% legend('Error');
 % grid on;
 % 
 % subplot(3, 1, 3)
 % hold on;
-% plot(time, rad2deg*omega_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
-% ylabel('omega_b_imu Z [m/s^2]')
-% legend('Measured');
+% plot(time, p_n_nb(3,:) - ins_data(3,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Z position [m]')
+% legend('Error');
 % grid on;
-% saveas(gcf,'GyroInput.jpeg')
-
-
-
-% gravity error
-figure(13)
-figure(gcf);
-subplot(3, 1, 1)
-hold on;
-plot(time, g_err_data(1,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('gravity err X [m/s^2]')
-legend('Est');
-title('Gravity');
-grid on;
-
-subplot(3, 1, 2)
-hold on;
-plot(time, g_err_data(2,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('gravity err Y [m/s^2]')
-legend('Estimated');
-grid on;
-
-
-subplot(3, 1, 3)
-hold on;
-plot(time, g_err_data(3,:),'Color', 'black', 'Linewidth', 1.5);
-ylabel('gravity err Z [m/s^2]')
-legend('Estimated');
-grid on;
-
-saveas(gcf,'results/GravityErrorState.jpeg')
-
-% Position map
-figure(14)
-figure(gcf)
-hold on;
-plot(p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-plot(ins_data(2,:), ins_data(1,:), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% plot(p_n_nb(2,10*f_samp:end), p_n_nb(1,10*f_samp:end), 'Color', 'black', 'Linewidth', 1.5);
-% plot(ins_data(2,10*f_samp:end), ins_data(1,10*f_samp:end), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
-xlabel('Y position [m]');
-ylabel('X position [m]');
-title('Position Plot');
-legend('True', 'Estimated');
-grid on;
-saveas(gcf,'results/PositionMap.jpeg')
+% saveas(gcf,'results/PositionError.jpeg')
+% 
+% 
+% % VELOCITIES
+% figure(3)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, ins_data(4,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('X velocity [m]')
+% legend('Est', 'True');
+% title('Velocity');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, ins_data(5,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Y velocity [m]')
+% legend('Est', 'True');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, ins_data(6,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Z velocity [m]')
+% legend('Est', 'True');
+% grid on;
+% saveas(gcf,'results/Velocity.jpeg')
+% 
+% % VELOCITY ERROR
+% figure(4)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, v_n_nb(1,:) - ins_data(4,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('X velocity [m/s]')
+% legend('Error');
+% title('Velocity Error');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, v_n_nb(2,:) - ins_data(5,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Y velocity [m/s]')
+% legend('Error');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, v_n_nb(3,:) - ins_data(6,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Z velocity [m/s]')
+% legend('Error');
+% grid on;
+% saveas(gcf,'results/VelocityError.jpeg')
+% 
+% 
+% 
+% % ACCEL BIAS
+% figure(5)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, ins_data(7,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, bacc_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('X acc bias [deg]')
+% legend('Est', 'True');
+% title('Accelerometer bias');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, ins_data(8,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, bacc_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Y acc bias [deg]')
+% legend('Est', 'True');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, ins_data(9,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Z acc bias [deg]')
+% legend('Est', 'True');
+% grid on;
+% saveas(gcf,'results/AccelBiast.jpeg')
+% 
+% 
+% % ACCEL BIAS ERROR
+% figure(6)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, bacc_b_nb(1,:) - ins_data(7,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('X accel bias [m/s^2]')
+% legend('Error');
+% title('Accelerometer Bias Error');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, bacc_b_nb(2,:) - ins_data(8,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Y accel bias error [m/s^2]')
+% legend('Error');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, bacc_b_nb(3,:) - ins_data(9,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Z accel bias [m/s^2]')
+% legend('Error');
+% grid on;
+% saveas(gcf,'results/AccelBiasError.jpeg')
+% 
+% 
+% 
+% % ATTITUDE 
+% figure(7)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, rad2deg*ins_data(10,:),'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Roll angle [deg]')
+% legend('Est', 'True');
+% title('Attitude');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, rad2deg*ins_data(11,:), 'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Pitch angle [deg]')
+% legend('Est', 'True');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, rad2deg*ins_data(12,:),'.', 'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, rad2deg*att_n_nb(3,:),'.', 'Color', 'black', 'Linewidth', 1.5);
+% xlabel('Time [s]');
+% ylabel('Yaw angle [deg]')
+% legend('Est', 'True');
+% grid on;
+% saveas(gcf,'results/Attitude.jpeg')
+% 
+% 
+% % ATTITUDE ERROR
+% figure(8)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, ssa(rad2deg*att_n_nb(1,:) - rad2deg*ins_data(10,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Roll angle [deg]')
+% legend('Error');
+% title('Attitude Error');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, ssa(rad2deg*att_n_nb(2,:) - rad2deg*ins_data(11,:), 'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Pitch angle [deg]')
+% legend('Error');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Yaw angle [deg]')
+% legend('Error');
+% grid on;
+% saveas(gcf,'results/AttitudeError.jpeg')
+% 
+% 
+% 
+% % GYRO BIAS
+% figure(9)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, ins_data(13,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, bars_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Roll bias [deg/s]')
+% legend('Est', 'True');
+% title('Gyro bias');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, ins_data(14,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, bars_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Pitch bias [deg/s]')
+% legend('Est', 'True');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, ins_data(15,:) ,'Color', [1,165/255, 0], 'Linewidth', 2);
+% plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('Yaw bias [deg/s]')
+% legend('Est', 'True');
+% grid on;
+% saveas(gcf,'results/GyroBias.jpeg')
+% 
+% % GYRA BIAS ERROR
+% figure(10)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, rad2deg*(bars_b_nb(1,:) - ins_data(13,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Roll bias [deg/s]')
+% legend('Error');
+% title('Gyro Bias Error');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, rad2deg*(bars_b_nb(2,:) - ins_data(14,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Pitch bias [deg/s]')
+% legend('Error');
+% grid on;
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, rad2deg*(bars_b_nb(3,:) - ins_data(15,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
+% ylabel('Yaw bias [deg/s]')
+% legend('Error');
+% grid on;
+% saveas(gcf,'results/GyroBiasError.jpeg')
+% 
+% 
+% % % Accelerometer input
+% % figure(11)
+% % figure(gcf);
+% % subplot(3, 1, 1)
+% % hold on;
+% % plot(time, f_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
+% % ylabel('f_b_imu X [m/s^2]')
+% % legend('Measured');
+% % title('Accelerometer input');
+% % grid on;
+% % 
+% % subplot(3, 1, 2)
+% % hold on;
+% % plot(time, f_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
+% % ylabel('f_b_imu y [m/s^2]')
+% % legend('Measured');
+% % grid on;
+% % 
+% % subplot(3, 1, 3)
+% % hold on;
+% % plot(time, f_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
+% % ylabel('f_b_imu Z [m/s^2]')
+% % legend('Measured');
+% % grid on;
+% % % saveas(gcf,'AccelInput.jpeg')
+% % 
+% % 
+% % 
+% % % Gyrometer input
+% % figure(12)
+% % figure(gcf);
+% % subplot(3, 1, 1)
+% % hold on;
+% % plot(time, rad2deg*omega_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
+% % ylabel('omega_b_imu X [m/s^2]')
+% % legend('Measured');
+% % title('Gyrometer input');
+% % grid on;
+% % 
+% % subplot(3, 1, 2)
+% % hold on;
+% % plot(time, rad2deg*omega_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
+% % ylabel('omega_b_imu y [m/s^2]')
+% % legend('Measured');
+% % grid on;
+% % 
+% % subplot(3, 1, 3)
+% % hold on;
+% % plot(time, rad2deg*omega_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
+% % ylabel('omega_b_imu Z [m/s^2]')
+% % legend('Measured');
+% % grid on;
+% % saveas(gcf,'GyroInput.jpeg')
+% 
+% 
+% 
+% % gravity error
+% figure(13)
+% figure(gcf);
+% subplot(3, 1, 1)
+% hold on;
+% plot(time, g_err_data(1,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('gravity err X [m/s^2]')
+% legend('Est');
+% title('Gravity');
+% grid on;
+% 
+% subplot(3, 1, 2)
+% hold on;
+% plot(time, g_err_data(2,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('gravity err Y [m/s^2]')
+% legend('Estimated');
+% grid on;
+% 
+% 
+% subplot(3, 1, 3)
+% hold on;
+% plot(time, g_err_data(3,:),'Color', 'black', 'Linewidth', 1.5);
+% ylabel('gravity err Z [m/s^2]')
+% legend('Estimated');
+% grid on;
+% 
+% saveas(gcf,'results/GravityErrorState.jpeg')
+% 
+% % Position map
+% figure(14)
+% figure(gcf)
+% hold on;
+% plot(p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
+% plot(ins_data(2,:), ins_data(1,:), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
+% % plot(p_n_nb(2,10*f_samp:end), p_n_nb(1,10*f_samp:end), 'Color', 'black', 'Linewidth', 1.5);
+% % plot(ins_data(2,10*f_samp:end), ins_data(1,10*f_samp:end), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
+% xlabel('Y position [m]');
+% ylabel('X position [m]');
+% title('Position Plot');
+% legend('True', 'Estimated');
+% grid on;
+% saveas(gcf,'results/PositionMap.jpeg')
