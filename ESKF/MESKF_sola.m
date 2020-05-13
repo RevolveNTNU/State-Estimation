@@ -53,7 +53,7 @@ bacc_b_ins = [0 0 0]';
 bars_b_ins = [0 0 0]';
 E_prev = zeros(18,12);
 ErrorStateKalman_sola(0,0,r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0, omega_b_imu_0, g_n_nb, x_ins);
-Iterative_ESKF(0, 0, 0, 0, r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0,omega_b_imu_0, g_n_nb, x_ins);
+Iterative_ESKF(0,0, 0, 0, 0, r_b_1, r_b_2, r_b_3, E_prev,0, 0, f_low, 1, f_b_imu_0,omega_b_imu_0, g_n_nb, x_ins);
 % init
 x_ins(1:3) = [5;6;7]; % for testing av ESKF
 % x_ins(1:3) = p_n_nb(:,1);
@@ -150,11 +150,15 @@ for k = 1:N
         std_pos = 2;
         R_pos = std_pos^2*I3;
         
-        [delta_x, E_prev] = Iterative_ESKF(H_gnss1, R_pos, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_gnss1 - y_gnss1_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
+        disp("dual 1");
+        [delta_x, E_prev] = Iterative_ESKF(0, H_gnss1, R_pos, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_gnss1 - y_gnss1_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
         [x_ins,g_n_hat] = InjectErrorState(delta_x, x_ins, g_n_hat);
-        
-        [delta_x, E_prev] = Iterative_ESKF(H_gnss2, R_pos, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_gnss2 - y_gnss2_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
+%         x_ins = INSUpdate(h, x_ins, a_n_ins, omega_b_ins);
+
+        disp("dual 2");
+        [delta_x, E_prev] = Iterative_ESKF(0, H_gnss2, R_pos, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_gnss2 - y_gnss2_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
         [x_ins,g_n_hat] = InjectErrorState(delta_x, x_ins, g_n_hat);
+%         x_ins = INSUpdate(h, x_ins, a_n_ins, omega_b_ins);
         
 
         
@@ -179,9 +183,11 @@ for k = 1:N
 
             std_vel = 1;
             R_vel = std_vel^2;
-
-            [delta_x, E_prev] = Iterative_ESKF(H_gss, R_vel, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_gss - y_gss_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
+            
+            disp("ground speed");
+            [delta_x, E_prev] = Iterative_ESKF(0, H_gss, R_vel, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_gss - y_gss_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
             [x_ins, g_n_hat] = InjectErrorState(delta_x, x_ins, g_n_hat);
+%             x_ins = INSUpdate(h, x_ins, a_n_ins, omega_b_ins);
         end
         
         
@@ -194,9 +200,16 @@ for k = 1:N
         
         std_pos = 2;
         R_vec = 20*std_pos^2*I3;
-
-        [delta_x, E_prev] = Iterative_ESKF(H_vec, R_vec, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_vec - y_vec_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
+        
+        last_meas = false;
+        if (race_started)
+            last_meas = true;
+        end
+        
+        disp("Vec");
+        [delta_x, E_prev] = Iterative_ESKF(last_meas, H_vec, R_vec, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_vec - y_vec_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
         [x_ins, g_n_hat] = InjectErrorState(delta_x, x_ins, g_n_hat);
+%         x_ins = INSUpdate(h, x_ins, a_n_ins, omega_b_ins);
         
         
 % -----------------------------------------------------------------------        
@@ -209,9 +222,11 @@ for k = 1:N
 
             std_acc = 1;
             R_acc = std_acc^2*I3;
-
-            [delta_x, E_prev] = Iterative_ESKF(H_acc, R_acc, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_acc - y_acc_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
+            
+            disp("Acc");
+            [delta_x, E_prev] = Iterative_ESKF(1, H_acc, R_acc, f_b_ins, race_started, r_b_1, r_b_2, r_b_3, E_prev,(y_acc - y_acc_hat), R_nb_ins, f_low, 0, f_b_imu, omega_b_imu, g_n_nb, x_ins);
             [x_ins, g_n_hat] = InjectErrorState(delta_x, x_ins, g_n_hat);
+%             x_ins = INSUpdate(h, x_ins, a_n_ins, omega_b_ins);
         end
         
         
@@ -330,419 +345,7 @@ PlotResults;
 % 
 % % PLOTS
 %       
-% % POSITION
-% figure(1)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(1,:),'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylabel('X position [m]')
-% legend('True', 'Est');
-% title('Position');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, p_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(2,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylabel('Y position [m]')
-% legend('True', 'Est');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, p_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(3,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylabel('Z position [m]')
-% legend('True', 'Est');
-% grid on;
-% saveas(gcf,'results/Position.jpeg')
-% 
-% % POSITION ERROR
-% figure(2)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, p_n_nb(1,:) - ins_data(1,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-3 3]);
-% ylabel('X position [m]')
-% legend('Est');
-% title('Position Error');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, p_n_nb(2,:) - ins_data(2,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-3 3]);
-% ylabel('Y position [m]')
-% legend('Error');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, p_n_nb(3,:) - ins_data(3,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-3 3]);
-% ylabel('Z position [m]')
-% legend('Error');
-% grid on;
-% saveas(gcf,'results/PositionError.jpeg')
-% 
-% 
-% % VELOCITIES
-% figure(3)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, v_n_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(4,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-20 20]);
-% ylabel('X velocity [m]')
-% legend('True', 'Est');
-% title('Velocity');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, v_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(5,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-20 20]);
-% ylabel('Y velocity [m]')
-% legend('True', 'Est');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, v_n_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(6,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-20 20]);
-% ylabel('Z velocity [m]')
-% legend('True', 'Est');
-% grid on;
-% saveas(gcf,'results/Velocity.jpeg')
-% 
-% % VELOCITY ERROR
-% figure(4)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, v_n_nb(1,:) - ins_data(4,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylabel('X velocity [m/s]')
-% legend('Error');
-% title('Velocity Error');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, v_n_nb(2,:) - ins_data(5,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylabel('Y velocity [m/s]')
-% legend('Error');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, v_n_nb(3,:) - ins_data(6,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylabel('Z velocity [m/s]')
-% legend('Error');
-% grid on;
-% saveas(gcf,'results/VelocityError.jpeg')
-% 
-% 
-% 
-% % ACCEL BIAS
-% figure(5)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, bacc_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(7,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-20 20]);
-% ylabel('X acc bias [deg]')
-% legend('True', 'Est');
-% title('Accelerometer bias');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, bacc_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(8,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-20 20]);
-% ylabel('Y acc bias [deg]')
-% legend('True', 'Est');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, bacc_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(9,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-20 20]);
-% ylabel('Z acc bias [deg]')
-% legend('True', 'Est');
-% grid on;
-% saveas(gcf,'results/AccelBiast.jpeg')
-% 
-% 
-% % ACCEL BIAS ERROR
-% figure(6)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, bacc_b_nb(1,:) - ins_data(7,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-20 20]);
-% ylabel('X accel bias [m/s^2]')
-% legend('Error');
-% title('Accelerometer Bias Error');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, bacc_b_nb(2,:) - ins_data(8,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-20 20]);
-% ylabel('Y accel bias error [m/s^2]')
-% legend('Error');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, bacc_b_nb(3,:) - ins_data(9,:) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-20 20]);
-% ylabel('Z accel bias [m/s^2]')
-% legend('Error');
-% grid on;
-% saveas(gcf,'results/AccelBiasError.jpeg')
-% 
-% 
-% 
-% % ATTITUDE 
-% figure(7)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, rad2deg*att_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-% plot(time, rad2deg*ins_data(10,:),'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-200 200]);
-% ylabel('Roll angle [deg]')
-% legend('True', 'Est');
-% title('Attitude');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, rad2deg*att_n_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, rad2deg*ins_data(11,:), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-200 200]);
-% ylabel('Pitch angle [deg]')
-% legend('True', 'Est');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, rad2deg*att_n_nb(3,:),'.', 'Color', 'black', 'Linewidth', 1.5);
-% plot(time, rad2deg*ins_data(12,:),'.', 'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-200 200]);
-% xlabel('Time [s]');
-% ylabel('Yaw angle [deg]')
-% legend('True', 'Est');
-% grid on;
-% saveas(gcf,'results/Attitude.jpeg')
-% 
-% 
-% % ATTITUDE ERROR
-% figure(8)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, ssa(rad2deg*att_n_nb(1,:) - rad2deg*ins_data(10,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-200 200]);
-% ylabel('Roll angle [deg]')
-% legend('Error');
-% title('Attitude Error');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, ssa(rad2deg*att_n_nb(2,:) - rad2deg*ins_data(11,:), 'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-200 200]);
-% ylabel('Pitch angle [deg]')
-% legend('Error');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, ssa(rad2deg*att_n_nb(3,:) - rad2deg*ins_data(12,:),'deg') ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-200 200]);
-% ylabel('Yaw angle [deg]')
-% legend('Error');
-% grid on;
-% saveas(gcf,'results/AttitudeError.jpeg')
-% 
-% 
-% 
-% % GYRO BIAS
-% figure(9)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, bars_b_nb(1,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(13,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-1 1]);
-% ylabel('Roll bias [deg/s]')
-% legend('True', 'Est');
-% title('Gyro bias');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, bars_b_nb(2,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(14,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-1 1]);
-% ylabel('Pitch bias [deg/s]')
-% legend('True', 'Est');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, bars_b_nb(3,:),'Color', 'black', 'Linewidth', 1.5);
-% plot(time, ins_data(15,:) ,'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% ylim([-1 1]);
-% ylabel('Yaw bias [deg/s]')
-% legend('True', 'Est');
-% grid on;
-% saveas(gcf,'results/GyroBias.jpeg')
-% 
-% % GYRA BIAS ERROR
-% figure(10)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, rad2deg*(bars_b_nb(1,:) - ins_data(13,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-50 50]);
-% ylabel('Roll bias [deg/s]')
-% legend('Error');
-% title('Gyro Bias Error');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, rad2deg*(bars_b_nb(2,:) - ins_data(14,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-50 50]);
-% ylabel('Pitch bias [deg/s]')
-% legend('Error');
-% grid on;
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, rad2deg*(bars_b_nb(3,:) - ins_data(15,:)) ,'Color', [0.6350, 0.0780, 0.1840], 'Linewidth', 0.5);
-% ylim([-50 50]);
-% ylabel('Yaw bias [deg/s]')
-% legend('Error');
-% grid on;
-% saveas(gcf,'results/GyroBiasError.jpeg')
-% 
-% 
-% % % Accelerometer input
-% % figure(11)
-% % figure(gcf);
-% % subplot(3, 1, 1)
-% % hold on;
-% % plot(time, f_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
-% % ylabel('f_b_imu X [m/s^2]')
-% % legend('Measured');
-% % title('Accelerometer input');
-% % grid on;
-% % 
-% % subplot(3, 1, 2)
-% % hold on;
-% % plot(time, f_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
-% % ylabel('f_b_imu y [m/s^2]')
-% % legend('Measured');
-% % grid on;
-% % 
-% % subplot(3, 1, 3)
-% % hold on;
-% % plot(time, f_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
-% % ylabel('f_b_imu Z [m/s^2]')
-% % legend('Measured');
-% % grid on;
-% % % saveas(gcf,'AccelInput.jpeg')
-% % 
-% % 
-% % 
-% % % Gyrometer input
-% % figure(12)
-% % figure(gcf);
-% % subplot(3, 1, 1)
-% % hold on;
-% % plot(time, rad2deg*omega_b_imu(1,:),'Color', 'black', 'Linewidth', 1.5);
-% % ylabel('omega_b_imu X [m/s^2]')
-% % legend('Measured');
-% % title('Gyrometer input');
-% % grid on;
-% % 
-% % subplot(3, 1, 2)
-% % hold on;
-% % plot(time, rad2deg*omega_b_imu(2,:),'Color', 'black', 'Linewidth', 1.5);
-% % ylabel('omega_b_imu y [m/s^2]')
-% % legend('Measured');
-% % grid on;
-% % 
-% % subplot(3, 1, 3)
-% % hold on;
-% % plot(time, rad2deg*omega_b_imu(3,:),'Color', 'black', 'Linewidth', 1.5);
-% % ylabel('omega_b_imu Z [m/s^2]')
-% % legend('Measured');
-% % grid on;
-% % saveas(gcf,'GyroInput.jpeg')
-% 
-% 
-% 
-% % gravity error
-% figure(13)
-% figure(gcf);
-% subplot(3, 1, 1)
-% hold on;
-% plot(time, g_err_data(1,:),'Color', 'black', 'Linewidth', 1.5);
-% ylim([-0.00001 0.00001]);
-% ylabel('Gravity X [m/s^2]')
-% legend('Est');
-% title('Gravity');
-% grid on;
-% 
-% subplot(3, 1, 2)
-% hold on;
-% plot(time, g_err_data(2,:),'Color', 'black', 'Linewidth', 1.5);
-% ylim([-0.00001 0.00001]);
-% ylabel('Gravity Y [m/s^2]')
-% legend('Est');
-% grid on;
-% 
-% 
-% subplot(3, 1, 3)
-% hold on;
-% plot(time, g_err_data(3,:),'Color', 'black', 'Linewidth', 1.5);
-% ylim([9.80600 9.81000]);
-% ylabel('Gravity Z [m/s^2]')
-% legend('Est');
-% grid on;
-% 
-% saveas(gcf,'results/GravityErrorState.jpeg')
-% 
-% % Position map
-% figure(14)
-% figure(gcf)
-% hold on;
-% plot(p_n_nb(2,:), p_n_nb(1,:), 'Color', 'black', 'Linewidth', 1.5);
-% plot(ins_data(2,:), ins_data(1,:), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% % plot(p_n_nb(2,10*f_samp:end), p_n_nb(1,10*f_samp:end), 'Color', 'black', 'Linewidth', 1.5);
-% % plot(ins_data(2,10*f_samp:end), ins_data(1,10*f_samp:end), 'Color', [1,165/255, 0], 'Linewidth', 1.5);
-% xlabel('Y position [m]');
-% ylabel('X position [m]');
-% title('Position Plot');
-% legend('True', 'Estimated');
-% grid on;
-% saveas(gcf,'results/PositionMap.jpeg')
-% 
-% 
+ 
 
 % FUNCTIONS
 
@@ -764,5 +367,29 @@ function [x_ins_out,g_n_hat] = InjectErrorState(delta_x, x_ins, g_n_hat)
         
         x_ins_out = x_ins;
             
+end
+
+function x_ins = INSUpdate(h, x_ins, a_n_ins, omega_b_ins)
+
+   
+   % split state vector
+   p_n_ins = x_ins(1:3);
+   v_n_ins = x_ins(4:6);
+   bacc_b_ins = x_ins(7:9);
+   q_n_ins = x_ins(10:13);
+   q_n_ins = q_n_ins/norm(q_n_ins);
+   bars_b_ins = x_ins(14:16);
+   % compute quaternion from angular rates 
+   q_omega_b_ins = qbuild(omega_b_ins, h);
+   
+   % update nominal states with imu input
+   p_n_ins = p_n_ins + (h * v_n_ins) + (0.5 * h * h * a_n_ins);
+   v_n_ins = v_n_ins +  (h * a_n_ins);
+  %bacc_b_ins = bacc_b_ins;
+   q_n_ins = quatprod(q_n_ins, q_omega_b_ins); 
+   q_n_ins = q_n_ins/norm(q_n_ins);
+  %bars_b_ins = bars_b_ins;
+   
+   x_ins = [p_n_ins ; v_n_ins ; bacc_b_ins ; q_n_ins ; bars_b_ins];
 end
 

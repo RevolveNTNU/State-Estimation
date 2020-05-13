@@ -85,7 +85,7 @@ function [delta_x, E] = Iterative_ESKF(last_measurement, H, R, f_b_ins, race_sta
         [isOutlier,H] = ChiSquareTest(H, P_hat, R, delta_y);
         disp(isOutlier);
         
-        if (~isOutlier)
+%         if (~isOutlier)
             
             % KF gain
             K = P_hat * H' / (H * P_hat * H' + R);
@@ -113,11 +113,11 @@ function [delta_x, E] = Iterative_ESKF(last_measurement, H, R, f_b_ins, race_sta
 %             P_hat = Ad * P_hat * Ad' + Qd;
 %             P_hat = (P_hat + P_hat')/2;
             
-        else
-            
-            delta_x = zeros(18,rank(delta_y));
-            
-        end
+%         else
+%             
+%             delta_x = zeros(18,rank(delta_y));
+%             
+%         end
         
         if (last_measurement)
             disp("last meas!");
