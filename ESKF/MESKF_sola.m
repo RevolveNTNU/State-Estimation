@@ -8,7 +8,7 @@ rad2deg = 180/pi;
 Z3 = zeros(3,3);
 I3 = eye(3);
 
-simtime = 250;
+simtime = 200;
 f_samp  = 100;          %imu frequency
 f_low   = 10;           %aiding frequency
 h       = 1/f_samp;     %sampling time
@@ -207,6 +207,20 @@ end
 % % PLOTS
 
 PlotResults;
+
+% RMS
+
+[rms_tot_pos, rms_lane_pos, rms_skid_pos] = RMS(p_n_nb, ins_data(1:3,:))
+[rms_tot_vel, rms_lane_vel, rms_skid_vel] = RMS(v_n_nb, ins_data(4:6,:))
+[rms_tot_bacc, rms_lane_bacc, rms_skid_bacc] = RMS(bacc_b_nb, ins_data(7:9,:))
+[rms_tot_att, rms_lane_att, rms_skid_att] = RMS(att_n_nb, ins_data(10:12,:));
+rms_tot_att = rad2deg * rms_tot_att 
+rms_lane_att = rad2deg * rms_lane_att 
+rms_skid_att = rad2deg * rms_skid_att 
+[rms_tot_bars, rms_lane_bars, rms_skid_bars] = RMS(bars_b_nb, ins_data(13:15,:));
+rms_tot_bars = rad2deg * rms_tot_bars 
+rms_lane_bars = rad2deg * rms_lane_bars 
+rms_skid_bars = rad2deg * rms_skid_bars
 
 %       
 % % POSITION

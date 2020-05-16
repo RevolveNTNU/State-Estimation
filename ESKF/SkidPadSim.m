@@ -81,14 +81,14 @@ for k = 1:N
     
     time(k) = t;
     
-    if (t > 25*t_goal) && (start == false)
+    if (t > 14*t_goal) && (start == false)
         omega_b_nb = [0 0 0]';
         a_b_nb = [v_abs/t_goal 0 0]';
         start = true;
     end
     
     
-    if (t > 26*t_goal) && (skid_flag == false)
+    if (t > 15*t_goal) && (skid_flag == false)
         omega_b_nb = [0 0 pi/(t_goal/2)]';
         a_b_nb = [0 (v_abs^2)/R 0]';
         skid_flag = true;
