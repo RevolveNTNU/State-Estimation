@@ -75,28 +75,28 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
 %                        1e-10 1e-10 1e-10 ...
 %                        1e-6 1e-6 1e-6]); 
                    
-       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
+       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
 
        delta_x = 0;
        
     else
-          A_dp = [Z3  I3  Z3  Z3  Z3  Z3];
-          A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3  I3];
-          A_dbacc = [Z3  Z3  -(1/Tacc)*I3  Z3  Z3  Z3];
-          A_dtheta = [Z3  Z3  Z3  -Smtrx(omega_b_imu - bars_b_ins)  -I3  Z3];
-          A_dbars = [Z3  Z3  Z3  Z3  -(1/Tars)*I3  Z3];
-          A_dg = [Z3  Z3  Z3  Z3  Z3  Z3];
+          A_dp = [Z3  I3  Z3  Z3  Z3 ];
+          A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3 ];
+          A_dbacc = [Z3  Z3  -(1/Tacc)*I3  Z3  Z3];
+          A_dtheta = [Z3  Z3  Z3  -Smtrx(omega_b_imu - bars_b_ins)  -I3];
+          A_dbars = [Z3  Z3  Z3  Z3  -(1/Tars)*I3];
+          A_dg = [Z3  Z3  Z3  Z3  Z3];
           
           if (~race_started)
               % Do not estimate 
-              A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3  Z3];
+              A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3 ];
           end
           
-          A =  [A_dp ; A_dv ; A_dbacc ; A_dtheta ; A_dbars ; A_dg];
+          A =  [A_dp ; A_dv ; A_dbacc ; A_dtheta ; A_dbars ];
           
           
          % Discrete-time model
-         Ad = eye(18) + h * A;
+         Ad = eye(15) + h * A;
 %          if (~race_started)
 %              % Do not estimate gravity error
 %              Ad = blkdiag(I3,I3,I3,I3,I3,Z3) + h * A;
@@ -115,20 +115,20 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
                 -R_nb_hat      Z3    Z3   Z3    % w_acc
                        Z3      I3    Z3   Z3    % w_acc_bias
                        Z3      Z3   -I3   Z3    % w_ars
-                       Z3      Z3    Z3   I3  % w_ars_bias
-                       Z3      Z3    Z3   Z3 ]; 
+                       Z3      Z3    Z3   I3];  % w_ars_bias
+%                        Z3      Z3    Z3   Z3]; 
 
           
 %           H = [ I3 Z3 Z3 Z3 Z3 Z3
 %                 I3 Z3 Z3 I3 Z3 Z3];
 
-          H_gnss1 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_1)  Z3  Z3];
+          H_gnss1 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_1)  Z3];
           
-          H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3  Z3];
+          H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3];
           
-          H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3  Z3];
+          H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3];
           
-          H_acc = [Z3  Z3  Z3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];              
+          H_acc = [Z3  Z3  Z3  -Smtrx(R_nb_hat' * g_n_nb)  Z3];              
 %           H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
           H_gss_pos = [ 0, 0, 0];
@@ -138,7 +138,7 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           H_gss_bars = [(r_b_3(3)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(1)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) - r_b_3(2)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)]; 
           H_gss_g = [0, 0, 0];
           
-          H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars  H_gss_g];
+          H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars ];
           
           
         std_pos = 2;
@@ -204,16 +204,16 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
 
          % corrector 
          delta_x = K * delta_y;
-         P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+         P_hat = (eye(15)-K*H) * P_hat * (eye(15) - K*H)' + K*R*K';
         
          % ESKF reset
          delta_theta = delta_x(10:12);
-         G = [ I3 Z3 Z3                            Z3 Z3 Z3 
-               Z3 I3 Z3                            Z3 Z3 Z3
-               Z3 Z3 I3                            Z3 Z3 Z3
-               Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3
-               Z3 Z3 Z3                            Z3 I3 Z3
-               Z3 Z3 Z3                            Z3 Z3 I3];
+         G = [ I3 Z3 Z3                            Z3 Z3 
+               Z3 I3 Z3                            Z3 Z3
+               Z3 Z3 I3                            Z3 Z3
+               Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3
+               Z3 Z3 Z3                            Z3 I3];
+%                Z3 Z3 Z3                            Z3 Z3 I3];
            
          P_hat = G * P_hat * G';
         

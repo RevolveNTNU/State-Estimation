@@ -75,28 +75,28 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
 %                        1e-10 1e-10 1e-10 ...
 %                        1e-6 1e-6 1e-6]); 
                    
-       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
+       P_hat = diag([1e-1 * ones(1, 3) 1e-2 * ones(1, 3) 5e-2 * ones(1, 3) 1e-10 * ones(1, 3) 1e-6 * ones(1, 3)]);  % Initial error covariance
 
        delta_x = 0;
        
     else
-          A_dp = [Z3  I3  Z3  Z3  Z3  Z3];
-          A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3  I3];
-          A_dbacc = [Z3  Z3  -(1/Tacc)*I3  Z3  Z3  Z3];
-          A_dtheta = [Z3  Z3  Z3  -Smtrx(omega_b_imu - bars_b_ins)  -I3  Z3];
-          A_dbars = [Z3  Z3  Z3  Z3  -(1/Tars)*I3  Z3];
-          A_dg = [Z3  Z3  Z3  Z3  Z3  Z3];
+          A_dp = [Z3  I3  Z3  Z3  Z3 ];
+          A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3 ];
+          A_dbacc = [Z3  Z3  -(1/Tacc)*I3  Z3  Z3];
+          A_dtheta = [Z3  Z3  Z3  -Smtrx(omega_b_imu - bars_b_ins)  -I3];
+          A_dbars = [Z3  Z3  Z3  Z3  -(1/Tars)*I3];
+          A_dg = [Z3  Z3  Z3  Z3  Z3];
           
           if (~race_started)
               % Do not estimate 
-              A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3  Z3];
+              A_dv = [Z3  Z3  -R_nb_hat  -R_nb_hat*Smtrx(f_b_imu - bacc_b_ins)  Z3 ];
           end
           
-          A =  [A_dp ; A_dv ; A_dbacc ; A_dtheta ; A_dbars ; A_dg];
+          A =  [A_dp ; A_dv ; A_dbacc ; A_dtheta ; A_dbars ];
           
           
          % Discrete-time model
-         Ad = eye(18) + h * A;
+         Ad = eye(15) + h * A;
 %          if (~race_started)
 %              % Do not estimate gravity error
 %              Ad = blkdiag(I3,I3,I3,I3,I3,Z3) + h * A;
@@ -115,23 +115,22 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
                 -R_nb_hat      Z3    Z3   Z3    % w_acc
                        Z3      I3    Z3   Z3    % w_acc_bias
                        Z3      Z3   -I3   Z3    % w_ars
-                       Z3      Z3    Z3   I3  % w_ars_bias
-                       Z3      Z3    Z3   Z3 ]; 
+                       Z3      Z3    Z3   I3];  % w_ars_bias
+%                        Z3      Z3    Z3   Z3]; 
 
           
 %           H = [ I3 Z3 Z3 Z3 Z3 Z3
 %                 I3 Z3 Z3 I3 Z3 Z3];
 
-          H_gnss1 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_1)  Z3  Z3];
+          H_gnss1 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_1)  Z3];
           
-          H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3  Z3];
+          H_gnss2 = [I3  Z3  Z3  -R_nb_hat*Smtrx(r_b_2)  Z3];
           
-          H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3  Z3];
+          H_vec = [Z3  Z3  Z3  -Smtrx(R_nb_hat*(r_b_2-r_b_1))  Z3];
           
-          H_acc = [Z3  Z3  I3  -Smtrx(R_nb_hat' * g_n_nb)  Z3  Z3];              
+          H_acc = [Z3  Z3  Z3  -Smtrx(R_nb_hat' * g_n_nb)  Z3];              
 %           H_acc = [Z3  Z3  Z3  Z3  Z3  Z3]; 
 
-          % Ground Speed           
           H_gss_pos = [ 0, 0, 0];
           H_gss_vel = [(R_nb_hat(1,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,1)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(2,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(1,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), (R_nb_hat(3,2)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) + R_nb_hat(2,3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)];
           H_gss_bacc = [0, 0, 0]; 
@@ -139,7 +138,7 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
           H_gss_bars = [(r_b_3(3)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(3)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2), -(r_b_3(1)*(R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1)) - r_b_3(2)*(R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2)))/((R_nb_hat(1,2)*v_n_ins(1) + R_nb_hat(2,2)*v_n_ins(2) + R_nb_hat(3,2)*v_n_ins(3) - bars_b_ins(2)*r_b_3(1) + bars_b_ins(1)*r_b_3(3) - omega_b_imu(1)*r_b_3(3) + omega_b_imu(3)*r_b_3(1))^2 + (R_nb_hat(1,1)*v_n_ins(1) + R_nb_hat(1,3)*v_n_ins(2) + R_nb_hat(2,3)*v_n_ins(3) + bars_b_ins(2)*r_b_3(2) - bars_b_ins(2)*r_b_3(3) + omega_b_imu(2)*r_b_3(3) - omega_b_imu(3)*r_b_3(2))^2)^(1/2)]; 
           H_gss_g = [0, 0, 0];
           
-          H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars  H_gss_g];
+          H_gss = [H_gss_pos  H_gss_vel  H_gss_bacc  H_gss_att  H_gss_bars ];
           
           
         std_pos = 2;
@@ -155,60 +154,11 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
         R = blkdiag(R_pos1 , R_pos2, std_vel^2, R_vec, R_acc);
           
            % Outlier Rejection
-                    
-          delta_y_gnss1 = delta_y(1:3);
-          delta_y_gnss2 = delta_y(4:6);
-          delta_y_gss = delta_y(7);
-          delta_y_vec = delta_y(8:10);
-          delta_y_acc = delta_y(11:13);
-          
-          [~,H_gnss1] = ChiSquareTest(H_gnss1, P_hat, R_pos1, delta_y_gnss1);
-          [~,H_gnss2] = ChiSquareTest(H_gnss2, P_hat, R_pos2, delta_y_gnss2);
-          [~,H_gss] = ChiSquareTest(H_gss, P_hat, R_vel, delta_y_gss);
-          [~,H_vec] = ChiSquareTest(H_vec, P_hat, R_vec, delta_y_vec);
-          [~,H_acc] = ChiSquareTest(H_acc, P_hat, R_acc, delta_y_acc); 
-          
-% %           R_gnss = R(1:3, 1:3); 
-% %           R_gss = R(7,7);
-% %           R_vec = R(8:10,8:10);
-% %           R_acc = R(11:13,11:13);
-% %          
-%           S = H_gnss1 * P_hat * H_gnss1' + R_pos1;
-%           T = delta_y_gnss1' * (S^(-1)) * delta_y_gnss1;
-%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
-%              H_gnss1 = zeros(3,18);
-% %              R_pos1 = zeros(3,3);
-%           end
-%           
-%           S = H_gnss2 * P_hat * H_gnss2' + R_pos2;
-%           T = delta_y_gnss2' * (S^(-1)) * delta_y_gnss2;
-%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
-%              H_gnss2 = zeros(3,18);
-% %              R_pos2 = zeros(3,3);
-%           end
-%           
-%           S = H_gss * P_hat * H_gss' + R_vel;
-%           T = delta_y_gss' * (S^(-1)) * delta_y_gss;
-%           if (T > 3.841) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
-%              H_gss = zeros(1,18);
-% %              R_vel = 0;
-%           end
-%           
-%           S = H_vec * P_hat * H_vec' + R_vec;
-%           T = delta_y_vec' * (S^(-1)) * delta_y_vec;
-%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
-%              H_vec = zeros(3,18);
-%              disp("reject vec meas");
-% %              R_vec = zeros(3,3);
-%           end
-%           
-%           S = H_acc * P_hat * H_acc' + R_acc;
-%           T = delta_y_acc' * (S^(-1)) * delta_y_acc;
-%           if (T > 7.815) % 7.815 corresponds to a confidence interval of 95% for a 3d quantity
-%              H_acc = zeros(3,18);
-% %              R_acc = zero(3,3);
-%           end
-
+          [~,H_gnss1] = ChiSquareTest(H_gnss1, P_hat, R_pos1, delta_y(1:3));
+          [~,H_gnss2] = ChiSquareTest(H_gnss2, P_hat, R_pos2, delta_y(4:6));
+          [~,H_gss] = ChiSquareTest(H_gss, P_hat, R_vel, delta_y(7));
+          [~,H_vec] = ChiSquareTest(H_vec, P_hat, R_vec, delta_y(8:10));
+          [~,H_acc] = ChiSquareTest(H_acc, P_hat, R_acc, delta_y(11:13)); 
           
           
           if (~race_started)
@@ -254,7 +204,7 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
 
          % corrector 
          delta_x = K * delta_y;
-         P_hat = (eye(18)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
+         P_hat = (eye(15)-K*H) * P_hat * (eye(18) - K*H)' + K*R*K';
         
          % ESKF reset
          delta_theta = delta_x(10:12);
@@ -262,8 +212,8 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
                Z3 I3 Z3                            Z3 Z3 Z3
                Z3 Z3 I3                            Z3 Z3 Z3
                Z3 Z3 Z3 (I3 - Smtrx(0.5*delta_theta)) Z3 Z3
-               Z3 Z3 Z3                            Z3 I3 Z3
-               Z3 Z3 Z3                            Z3 Z3 I3];
+               Z3 Z3 Z3                            Z3 I3 Z3];
+%                Z3 Z3 Z3                            Z3 Z3 I3];
            
          P_hat = G * P_hat * G';
         

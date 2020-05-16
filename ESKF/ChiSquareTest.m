@@ -17,7 +17,7 @@ S = H_in * P_hat * H_in' + R;
 T = delta_y' * (S^(-1)) * delta_y;
 if (T > thresh) 
     isOutlier = true;
-    H_out = zeros(dim,18);
+    H_out = zeros(dim,length(H_in));
 else
     isOutlier = false;
     H_out = H_in;
