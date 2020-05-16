@@ -69,7 +69,7 @@ C_ins = [I3 Z3 Z3 Z3 Z3
 g_n_hat = g_n_nb;
      
 count = 10;
-race_started = false;
+race_started = true;
 
 for k = 1:N
    t = k * h;

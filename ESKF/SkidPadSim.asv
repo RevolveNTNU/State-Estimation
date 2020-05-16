@@ -88,7 +88,7 @@ for k = 1:N
 %     end
 %     
     
-    if (t > 4*t_goal) && (skid_flag == false)
+    if (t > t_goal) && (skid_flag == false)
         omega_b_nb = [0 0 pi/(t_goal/2)]';
         a_b_nb = [0 (v_abs^2)/R 0]';
         skid_flag = true;
