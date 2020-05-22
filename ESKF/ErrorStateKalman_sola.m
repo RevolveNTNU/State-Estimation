@@ -157,9 +157,12 @@ function [delta_x, E] = ErrorStateKalman_sola(f_b_ins, race_started, r_b_1, r_b_
            % Outlier Rejection
           [~,H_gnss1] = ChiSquareTest(H_gnss1, P_hat, R_pos1, delta_y(1:3));
           [~,H_gnss2] = ChiSquareTest(H_gnss2, P_hat, R_pos2, delta_y(4:6));
-          [~,H_gss] = ChiSquareTest(H_gss, P_hat, R_vel, delta_y(7));
+          [~,H_gss] = ChiSquareTest(H_gss, P_hat, R_vel, delta_y(7));       
           [~,H_vec] = ChiSquareTest(H_vec, P_hat, R_vec, delta_y(8:10));
           [~,H_acc] = ChiSquareTest(H_acc, P_hat, R_acc, delta_y(11:13)); 
+          
+          H_vec = zeros(3,18);
+          H_gnss1 = zeros(3,18);
           
           
           if (~race_started)

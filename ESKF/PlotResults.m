@@ -32,7 +32,7 @@ ylabel('Z position [m]')
 xlabel('Time [s]')
 legend('True', 'Est', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/Position.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/Position.jpeg')
 
 % POSITION ERROR
 figure(2)
@@ -66,7 +66,7 @@ ylabel('Z position [m]')
 xlabel('Time [s]')
 legend('Zero ref.', 'Error','Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/PositionError.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/PositionError.jpeg')
 
 
 % VELOCITIES
@@ -102,7 +102,7 @@ ylabel('Z velocity [m]')
 xlabel('Time [s]')
 legend('True', 'Est', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/Velocity.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/Velocity.jpeg')
 
 % VELOCITY ERROR
 figure(4)
@@ -137,7 +137,7 @@ ylabel('Z velocity [m/s]')
 xlabel('Time [s]')
 legend('Zero ref.', 'Error', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/VelocityError.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/VelocityError.jpeg')
 
 
 
@@ -174,7 +174,7 @@ ylabel('Z acc bias [deg]')
 xlabel('Time [s]')
 legend('True', 'Est', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/AccelBiast.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/AccelBiast.jpeg')
 
 
 % ACCEL BIAS ERROR
@@ -210,7 +210,7 @@ ylabel('Z accel bias [m/s^2]')
 xlabel('Time [s]')
 legend('Zero ref.', 'Error', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/AccelBiasError.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/AccelBiasError.jpeg')
 
 
 
@@ -248,7 +248,7 @@ ylabel('Yaw angle [deg]')
 xlabel('Time [s]')
 legend('True', 'Est', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/Attitude.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/Attitude.jpeg')
 
 
 % ATTITUDE ERROR
@@ -284,7 +284,7 @@ ylabel('Yaw angle [deg]')
 xlabel('Time [s]')
 legend('Zero ref.', 'Error', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/AttitudeError.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/AttitudeError.jpeg')
 
 
 
@@ -321,7 +321,7 @@ ylabel('Yaw bias [deg/s]')
 xlabel('Time [s]')
 legend('True', 'Est', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/GyroBias.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/GyroBias.jpeg')
 
 % GYRA BIAS ERROR
 figure(10)
@@ -356,7 +356,7 @@ ylabel('Yaw bias [deg/s]')
 xlabel('Time [s]')
 legend('Zero ref.', 'Error', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/GyroBiasError.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/GyroBiasError.jpeg')
 
 
 % Gravity (estimate)
@@ -391,7 +391,7 @@ xlabel('Time [s]')
 legend('Est');
 grid minor;
 
-saveas(gcf,'results/GravityErrorState.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/GravityErrorState.jpeg')
 
 % Position map
 figure(14)
@@ -406,4 +406,4 @@ ylabel('X position [m]');
 title('Position Plot');
 legend('True', 'Est', 'Orientation','horizontal');
 grid minor;
-saveas(gcf,'results/PositionMap.jpeg')
+saveas(gcf,'results_no-vec-no-gnss1/PositionMap.jpeg')
